@@ -1,5 +1,5 @@
 # ignore xls lock file
-data/.~lock.*
+**/.~lock.*
 # ignore generates visualization
 visualization.xlsx
 

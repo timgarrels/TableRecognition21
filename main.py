@@ -1,13 +1,14 @@
 from os.path import join
-import graphviz
 from openpyxl import load_workbook, Workbook
 import openpyxl
 import random
 
 from label_region_preprocessing import LabelRegionPreprocessor
+from SpreadSheetGraph import SpreadSheetGraph
 
 
 DATA_DIR = "data"
+VISUALIZATIONS_DIR = "visualizations"
 ANNOTATIONS = "annotations_elements.json"
 SPREADSHEET = "andrea_ring__3__HHmonthlyavg.xlsx"
 ANNOTATION_FILE = join(DATA_DIR, ANNOTATIONS)
@@ -24,7 +25,7 @@ def visualize_lrs(lrs):
 
     wb = Workbook()
     ws = wb.create_sheet("Visualization")
-    for lr in lrs:
+    for i, lr in enumerate(lrs):
         color = openpyxl.styles.colors.Color(rgb=random_rgb_hex())
         fill = openpyxl.styles.fills.PatternFill(patternType='solid', fgColor=color)
         min_x, min_y = lr["top_left"]
@@ -32,9 +33,9 @@ def visualize_lrs(lrs):
         for x in range(min_x, max_x + 1):
             for y in range(min_y, max_y + 1):
                 d = ws.cell(y, x)
-                d.value = lr["type"]
+                d.value = f"{i} - {lr['type']}"
                 d.fill = fill
-    wb.save('visualization.xlsx')
+    wb.save(join(VISUALIZATIONS_DIR, 'visualization.xlsx'))
 
 def main():
     wb = load_workbook(SPREADSHEET_FILE)
@@ -47,7 +48,9 @@ def main():
 
     lrs = preprocessor.preproces_annotations()
     visualize_lrs(lrs)
+    g = SpreadSheetGraph.from_label_regions(lrs)
 
+    g.visualize(out=join(VISUALIZATIONS_DIR, 'graph'))
 
 if __name__ == "__main__":
     main()
