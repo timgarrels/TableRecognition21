@@ -1,3 +1,6 @@
+# ignore xls lock file
+data/.~lock.*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
