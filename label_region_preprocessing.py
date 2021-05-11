@@ -75,6 +75,31 @@ class LabelRegionPreprocessor(object):
 
         return rows
 
+    def _remove_empty_cells(self, cell_rows):
+        """Removes empty cells from given rows
+        The paper assumes that only non-empty cells are annotaed
+        In our model annotations can span empty cells"""
+        filtered_cell_rows = []
+        for row in cell_rows:
+            filtered_row = []
+            for cell in row:
+                if not self._cell_empty(cell):
+                    filtered_row.append(cell)
+            filtered_cell_rows.append(filtered_row)
+
+        return filtered_cell_rows
+
+    def _cell_empty(self, cell):
+        """Returns whether the value at this cell is
+        empty (only whitespace)"""
+
+         # Increase coordinates by one as our annotations are indexed
+         # starting from 0 and openpyxl is indexted starting from 1
+        return self._worksheet.cell(
+            row=cell["y"] + 1,
+            column=cell["x"] + 1,
+        ).value is None
+
     def _merge_labled_cells_into_lrs(self, cell_rows):
         """Spreads cells to strictly rectangular regions
         Refer to https://upcommons.upc.edu/bitstream/handle/2117/128001/ROMERO%20Table%20recognition.pdf;jsessionid=F7D1099DA22A66950693F51EE0720A5C?sequence=1
@@ -160,31 +185,6 @@ class LabelRegionPreprocessor(object):
                 "bottom_right": bottom_right,
             })
         return lrs
-
-    def _remove_empty_cells(self, cell_rows):
-        """Removes empty cells from given rows
-        The paper assumes that only non-empty cells are annotaed
-        In our model annotations can span empty cells"""
-        filtered_cell_rows = []
-        for row in cell_rows:
-            filtered_row = []
-            for cell in row:
-                if not self._cell_empty(cell):
-                    filtered_row.append(cell)
-            filtered_cell_rows.append(filtered_row)
-
-        return filtered_cell_rows
-
-    def _cell_empty(self, cell):
-        """Returns whether the value at this cell is
-        empty (only whitespace)"""
-
-         # Increase coordinates by one as our annotations are indexed
-         # starting from 0 and openpyxl is indexted starting from 1
-        return self._worksheet.cell(
-            row=cell["y"] + 1,
-            column=cell["x"] + 1,
-        ).value is None
 
     def preproces_annotations(self):
         annotation = self._get_annotation()

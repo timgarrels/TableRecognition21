@@ -1,5 +1,7 @@
 # ignore xls lock file
 data/.~lock.*
+# ignore generates visualization
+visualization.xlsx
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
