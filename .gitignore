@@ -2,6 +2,8 @@
 **/.~lock.*
 # ignore generates visualization
 visualization.xlsx
+# Ignore IDE files
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
