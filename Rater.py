@@ -5,7 +5,7 @@ from SpreadSheetGraph import SpreadSheetGraph
 # TODO: Implement metrics (how to access cell data? via graph?)
 # TODO: Implement weight training
 
-Metric = Callable[[SpreadSheetGraph, List[bool]], float]
+Metric = Callable[[SpreadSheetGraph], float]
 
 class Rater(object):
     def __init__(self, enabled_metrics: List[Metric]=None):
@@ -17,12 +17,16 @@ class Rater(object):
 
         self.weights: Dict[Metric, float] = {}.fromkeys(self.enabled_metrics, 1)
 
-    def mock_metric(self, graph: SpreadSheetGraph, edge_toggle_list: List[bool]) -> float:
-        return sum(edge_toggle_list)
+    def mock_metric(self, graph: SpreadSheetGraph) -> float:
+        return sum(graph.edge_toggle_list)
 
     def rate_partition(self, graph: SpreadSheetGraph, edge_toggle_list: List[bool]) -> float:
+        # Create graph copy with that partition
+        new_graph = graph
+        new_graph.edge_toggle_list = edge_toggle_list
+
         scores = []
         for metric in self.enabled_metrics:
-            score = self.weights[metric] * metric(graph, edge_toggle_list)
+            score = self.weights[metric] * metric(new_graph)
             scores.append(score)
         return sum(scores)
