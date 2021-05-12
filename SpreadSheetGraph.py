@@ -12,6 +12,7 @@ class SpreadSheetGraph(object):
         """Creates a graph from label regions
         Refer to `A Genetic-based Search for Adaptive TableRecognition in Spreadsheets.pdf`
         for the approach"""
+        existing_edges = []
         edge_list = []
         for i, source in enumerate(lr_list):
             for j, dest in enumerate(lr_list):
@@ -26,11 +27,15 @@ class SpreadSheetGraph(object):
                     vertical_overlap = True if len(set(source_ys).intersection(dest_ys)) > 0 else False
 
                     if horizontal_overlap or vertical_overlap:
-                        edge_list.append({
-                            "source": i,
-                            "dest": j,
-                            "overlap_type": "horizontal" if horizontal_overlap else "vertical"
-                        })
+                        if (i, j) not in existing_edges and (j, i) not in existing_edges:
+                            # Make sure edges exist only once, regardless on order of source and dest
+                            existing_edges.extend([(i, j), (j, i)])
+                            edge_list.append({
+                                "source": i,
+                                "dest": j,
+                                "overlap_type": "horizontal" if horizontal_overlap else "vertical"
+                            })
+
         return SpreadSheetGraph(lr_list, edge_list)
 
     def visualize(self, format="png", engine="dot", out="out"):
