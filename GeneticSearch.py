@@ -81,29 +81,13 @@ class GeneticSearch(object):
             child[mutated_index] = not child[mutated_index]
             return child
         elif p > self.configuration.rand_mut_p and p < self.configuration.cross_mut_p + self.configuration.rand_mut_p:
-            # Do cross mutation
-            # TODO: Paper does not specify operator and apply size
-            # We use XOR on :cross_mut_scale percent of the values
+            # Do uniform cross mutation
             p1_index = random.randint(0, len(population) - 1)
             p1_toggle_list = population.pop(p1_index)
             p2_toggle_list = random.choice(population)
 
-            # Fet the mutation indices
-            cross_mut_scale = max(0, min(self.configuration.cross_mut_scale, 1))
-            mutation_count = round(len(p1_toggle_list) * cross_mut_scale)
-            # At least one mutation should happen, use :cross_mut_p=0 to stop this mutation
-            mutation_count = min(1, mutation_count)
-
-            indices = list(range(len(p1_toggle_list)))
-            mutated_indices = []
-            for _ in range(mutation_count):
-                mutated_indices.append(indices.pop(random.randint(0, len(indices) - 1)))
-
-            child = p1_toggle_list
-            for mutation in mutated_indices:
-                # XOR p1 with p2
-                child[mutation] = p1_toggle_list[mutation] ^ p2_toggle_list[mutation]
-
+            # For each index, randomly choose either p1 or p2 bit
+            child = [random.choice([p1_toggle_list[i], p2_toggle_list[i]]) for i in range(len(p1_toggle_list))]
             return child
         else:
             # No mutation
