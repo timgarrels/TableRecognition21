@@ -1,0 +1,172 @@
+"""Implements genetic search on SpreadsheetGraphs"""
+import math
+import random
+from typing import List
+
+from GeneticSearchConfiguration import GeneticSearchConfiguration, DEFAULT_CONFIG
+from SpreadSheetGraph import SpreadSheetGraph
+from Rater import Rater
+
+random.seed(1)
+
+class GeneticSearch(object):
+    def __init__(
+        self,
+        graph: SpreadSheetGraph,
+        rater: Rater,
+        configuration: GeneticSearchConfiguration,
+    ):
+        self.graph = graph
+        self.rater = rater
+        self.configuration = configuration
+
+    def rate_edge_toggle_list(self, edge_toggle_list: List[bool]):
+        return self.rater.rate_partition(self.graph, edge_toggle_list)
+
+    def random_edge_toggle_list(self) -> List[bool]:
+        """Creates a single, random edge toggle list
+        # TODO: Implement Seed"""
+        if self.configuration.seed is not None:
+            raise NotImplementedError("Seed is not implemented!")
+        return [random.choice([True, False]) for _ in range(len(self.graph.edge_list))]
+
+    @staticmethod
+    def print_toggle_list(toggle_list):
+        return ''.join([bin(x)[2] for x in toggle_list])
+
+    def genetic_search(self):
+        n_pop = int(math.log10(len(self.graph.edge_list) * 100))
+        n_offspring = n_pop
+        n_survivors = n_pop
+
+        # Create first population and hof
+        pop = [self.random_edge_toggle_list() for _ in range(n_pop)]
+        ratings = list(map(lambda individual: self.rate_edge_toggle_list(individual), pop))
+        hof_individual = None
+        hof_rating = None
+        for i in range(len(pop)):
+            if hof_individual is None and hof_rating is None:
+                hof_individual = pop[i]
+                hof_rating = ratings[i]
+            else:
+                if ratings[i] < hof_rating:
+                    hof_individual = pop[i]
+                    hof_rating = ratings[i]
+
+        for generation in range(self.configuration.n_gen):
+            # createOffsprings
+            children = [self.child_from_popultaion(pop) for _ in range(n_offspring)]
+            # updateHallOfFame
+            children_ratings = list(map(lambda individual: self.rate_edge_toggle_list(individual), children))
+            for i in range(len(children)):
+                if children_ratings[i] < hof_rating:
+                    _ = 1
+                    hof_individual = children[i][:] # By value
+                    hof_rating = children_ratings[i]
+                    _ = 1
+            # selectFittest
+            pop, ratings = self.select_fittest(pop, ratings, children, children_ratings, n_survivors, self.configuration.rooster_size)
+
+        return hof_individual, hof_rating
+
+    def child_from_popultaion(self, population: List[List[bool]]) -> List[bool]:
+        """Generate a child toggle list for the next generation using a parent population and propabilities for the mutations"""
+        population = population[:] # By value
+        p = random.random()
+        if p < self.configuration.rand_mut_p:
+            # Do random mutation
+            parent_toggle_list = random.choice((population))
+            mutated_index = random.randint(0, len(parent_toggle_list) - 1)
+            child = parent_toggle_list
+            child[mutated_index] = not child[mutated_index]
+            return child
+        elif p > self.configuration.rand_mut_p and p < self.configuration.cross_mut_p + self.configuration.rand_mut_p:
+            # Do cross mutation
+            # TODO: Paper does not specify operator and apply size
+            # We use XOR on :cross_mut_scale percent of the values
+            p1_index = random.randint(0, len(population) - 1)
+            p1_toggle_list = population.pop(p1_index)
+            p2_toggle_list = random.choice(population)
+
+            # Fet the mutation indices
+            cross_mut_scale = max(0, min(self.configuration.cross_mut_scale, 1))
+            mutation_count = round(len(p1_toggle_list) * cross_mut_scale)
+            # At least one mutation should happen, use :cross_mut_p=0 to stop this mutation
+            mutation_count = min(1, mutation_count)
+
+            indices = list(range(len(p1_toggle_list)))
+            mutated_indices = []
+            for _ in range(mutation_count):
+                mutated_indices.append(indices.pop(random.randint(0, len(indices) - 1)))
+
+            child = p1_toggle_list
+            for mutation in mutated_indices:
+                # XOR p1 with p2
+                child[mutation] = p1_toggle_list[mutation] ^ p2_toggle_list[mutation]
+
+            return child
+        else:
+            # No mutation
+            return random.choice(population)
+
+    def select_fittest(
+        self,
+        parents: List[bool],
+        parent_ratings: List[float],
+        children: List[bool],
+        children_ratings: List[bool],
+        n_survivors: int,
+        rooster_size=3,
+    ):
+        participants = parents + children
+        ratings = parent_ratings + children_ratings
+
+        survivors = []
+        survivor_ratings = []
+        while len(survivor_ratings) < n_survivors:
+            # Choose three participants
+            participant_indices = list(range(len(participants)))
+
+            if len(participants) < rooster_size:
+                # Not enough participants for rooster, add random participant
+                participant_index = random.choice(participant_indices)
+                participant_indices.pop(participant_indices.index(participant_index))
+                survivors.append(participants.pop(participant_index))
+                survivor_ratings.append(ratings.pop(participant_index))
+                continue
+
+            rooster = []
+            for _ in range(rooster_size):
+                # Choose a participant and add him and his rating to the rooster
+                participant_index = random.choice(participant_indices)
+                participant_indices.pop(participant_indices.index(participant_index))
+                rooster.append((participant_index, ratings[participant_index]))
+            # Select fittest of participants as survivor
+            fittest_participant_index = sorted(rooster, key=lambda x: x[1])[0][0]
+            fittest_participant = participants.pop(fittest_participant_index)
+            fittest_rating = ratings.pop(fittest_participant_index)
+            survivors.append(fittest_participant)
+            survivor_ratings.append(fittest_rating)
+        return survivors, survivor_ratings
+
+
+def test():
+    print("Running genetic search test")
+    class MockSheetGraph():
+        def __init__(self, edge_count):
+            self.edge_list = [1 for _ in range(edge_count)]
+
+    edge_count = 10
+    search = GeneticSearch(
+        MockSheetGraph(edge_count),
+        Rater(),
+        DEFAULT_CONFIG,
+    )
+
+    fittest, fittest_rating = search.genetic_search()
+    print("-----------\nResult:")
+    print(f"\tFittest: {GeneticSearch.print_toggle_list(fittest)} (Rating: {fittest_rating})")
+    print(f"\tTrue Count of Fittest: {sum(fittest)}")
+
+if __name__ == "__main__":
+    test()
