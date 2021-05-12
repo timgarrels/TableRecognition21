@@ -10,6 +10,8 @@ from Rater import Rater
 
 logger = logging.getLogger(__name__)
 
+# TODO: This is only the genetic way, it is noted that for graphs with |V| <= 10
+# TODO: an exhausitve search is possible
 class GeneticSearch(object):
     def __init__(
         self,
