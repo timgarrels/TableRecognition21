@@ -1,30 +1,53 @@
 import ntpath
 import json
-from openpyxl import load_workbook
+from openpyxl.styles.colors import Color
+from openpyxl.styles.fills import PatternFill
+from openpyxl import load_workbook, Workbook
+import random
+import logging
 
+
+logger = logging.getLogger(__name__)
+
+
+def random_rgb_hex():
+    """Creates a random rgb string like 00FF00FF"""
+    return ''.join([hex(random.choice(range(16)))[2:] for _ in range(8)])
 class LabelRegionPreprocessor(object):
-    def __init__(self, annotation_file, spreadsheet_file, sheet_name, remove_empty_cells=True):
-        self.annotation_file = annotation_file
-        self.spreadsheet_file = spreadsheet_file
-        self.sheet_name = sheet_name
+
+
+    @staticmethod
+    def visualize_lrs(lrs, out):
+        """Creates a colorful spreadsheet from the lr data"""
+        wb = Workbook()
+        ws = wb.create_sheet("Visualization")
+        for i, lr in enumerate(lrs):
+            color = Color(rgb=random_rgb_hex())
+            fill = PatternFill(patternType='solid', fgColor=color)
+            min_x, min_y = lr["top_left"]
+            max_x, max_y = lr["bottom_right"]
+            for x in range(min_x, max_x + 1):
+                for y in range(min_y, max_y + 1):
+                    d = ws.cell(y, x)
+                    d.value = f"{i} - {lr['type']}"
+                    d.fill = fill
+        wb.save(out)
+
+    def __init__(self, remove_empty_cells=True):
         self.remove_empty_cells = remove_empty_cells
-
-        self._workbook = load_workbook(self.spreadsheet_file)
-        self._worksheet = self._workbook[sheet_name]
-
 
     def _read_annotations(self):
         """Returns all annotations as dict"""
-        with open(self.annotation_file) as f:
+        with open(self._annotation_file) as f:
             data = f.read()
         return json.loads(data)
 
     def _get_annotation(self):
         """Returns the annotation of the spreadsheet"""
         annotations = self._read_annotations()
-        spreadsheet_name = ntpath.basename(self.spreadsheet_file)
+        spreadsheet_name = ntpath.basename(self._spreadsheet_file)
         # Only load first sheet, can not decide relevance of other sheets
-        annotation_key = spreadsheet_name + '_' + self.sheet_name + '.csv'
+        annotation_key = spreadsheet_name + '_' + self._sheet_name + '.csv'
         return annotations[annotation_key]
 
     def _flatten_and_rewrite_label_regions(self, annotation):
@@ -186,14 +209,25 @@ class LabelRegionPreprocessor(object):
             })
         return lrs
 
-    def preproces_annotations(self):
+    def preproces_annotations(self, annotation_file, spreadsheet_file, sheet_name):
+        logger.debug("Reading Spreadsheet...")
+        self._annotation_file = annotation_file
+        self._spreadsheet_file = spreadsheet_file
+        self._sheet_name = sheet_name
+        self._workbook = load_workbook(self._spreadsheet_file)
+        self._worksheet = self._workbook[self._sheet_name]
+        logger.debug("Reading Annotations...")
         annotation = self._get_annotation()
+        logger.debug("Rewriting Chair Label Regions...")
         flattend_lrs = self._flatten_and_rewrite_label_regions(annotation)
+        logger.debug("Splitting Chair Label Regions into Cells...")
         cell_rows = self._split_lrs_into_cells(flattend_lrs)
 
         if self.remove_empty_cells:
+            logger.debug("Removing Empty Cells...")
             cell_rows = self._remove_empty_cells(cell_rows)
 
+        logger.debug("Merging Cells into Paper Label Regions...")
         lrs =  self._merge_labled_cells_into_lrs(cell_rows)
 
         return lrs

@@ -1,10 +1,17 @@
+from GeneticSearchConfiguration import GeneticSearchConfiguration
+from Rater import Rater
 from os.path import join
-from openpyxl import load_workbook, Workbook
-import openpyxl
-import random
+from openpyxl import load_workbook
+import logging
+
+import sys
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 from LabelRegionPreprocessor import LabelRegionPreprocessor
 from SpreadSheetGraph import SpreadSheetGraph
+from GeneticSearch import GeneticSearch
+
+logger = logging.getLogger(__name__)
 
 
 DATA_DIR = "data"
@@ -14,43 +21,42 @@ SPREADSHEET = "andrea_ring__3__HHmonthlyavg.xlsx"
 ANNOTATION_FILE = join(DATA_DIR, ANNOTATIONS)
 SPREADSHEET_FILE = join(DATA_DIR, SPREADSHEET)
 
-def random_rgb_hex():
-    """Creates a random rgb string like 00FF00FF"""
-    return ''.join([hex(random.choice(range(16)))[2:] for _ in range(8)])
-
-def visualize_lrs(lrs):
-    """Creates a colorful spreadsheet from the lr data"""
-    my_red = openpyxl.styles.colors.Color(rgb='00FF0000')
-    redFill = openpyxl.styles.fills.PatternFill(patternType='solid', fgColor=my_red)
-
-    wb = Workbook()
-    ws = wb.create_sheet("Visualization")
-    for i, lr in enumerate(lrs):
-        color = openpyxl.styles.colors.Color(rgb=random_rgb_hex())
-        fill = openpyxl.styles.fills.PatternFill(patternType='solid', fgColor=color)
-        min_x, min_y = lr["top_left"]
-        max_x, max_y = lr["bottom_right"]
-        for x in range(min_x, max_x + 1):
-            for y in range(min_y, max_y + 1):
-                d = ws.cell(y, x)
-                d.value = f"{i} - {lr['type']}"
-                d.fill = fill
-    wb.save(join(VISUALIZATIONS_DIR, 'visualization.xlsx'))
 
 def main():
+    logger.info("Creating Label Regions...")
     wb = load_workbook(SPREADSHEET_FILE)
     sheetname = wb.sheetnames[0]
-    preprocessor = LabelRegionPreprocessor(
+    preprocessor = LabelRegionPreprocessor()
+
+    label_regions = preprocessor.preproces_annotations(
         ANNOTATION_FILE,
         SPREADSHEET_FILE,
         sheetname,
     )
+    logger.info("Visualizing Label Regions...")
+    LabelRegionPreprocessor.visualize_lrs(label_regions, out=join(VISUALIZATIONS_DIR, 'lrs.xlsx'))
 
-    lrs = preprocessor.preproces_annotations()
-    visualize_lrs(lrs)
-    g = SpreadSheetGraph.from_label_regions(lrs)
+    logger.info("Creating Spreadsheet Graph...")
+    sheet_graph = SpreadSheetGraph.from_label_regions(label_regions)
+    logger.debug(f"Edge Count: {len(sheet_graph.edge_list)}")
+    logger.info("Visualizing Spreadsheet Graph...")
+    sheet_graph.visualize(out=join(VISUALIZATIONS_DIR, 'original_graph'))
 
-    g.visualize(out=join(VISUALIZATIONS_DIR, 'graph'))
+    logger.info("Running Genetic Search...")
+    genetic_search = GeneticSearch(
+        sheet_graph,
+        # TODO: Rater should be trained
+        Rater(),
+        GeneticSearchConfiguration(rand_mut_p=0.1, cross_mut_p=0.5, n_gen=1000),
+    )
+
+    fittest, fittest_rating = genetic_search.run()
+    logger.debug(f"Best rating: {fittest_rating}")
+
+    logger.info("Visualizaing Fittest Graph Partition...")
+    sheet_graph.edge_toggle_list = fittest
+    sheet_graph.visualize(out=join(VISUALIZATIONS_DIR, 'fittest_graph'))
+
 
 if __name__ == "__main__":
     main()

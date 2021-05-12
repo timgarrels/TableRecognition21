@@ -24,5 +24,3 @@ class GeneticSearchConfiguration(object):
             f"seed: {self.seed}",
             f"rooster_size: {self.rooster_size}",
         ])
-
-DEFAULT_CONFIG = GeneticSearchConfiguration()

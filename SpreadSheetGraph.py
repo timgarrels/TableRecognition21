@@ -1,6 +1,5 @@
 """Creates a Graph from Label Regions"""
 import graphviz
-from functools import reduce
 
 class SpreadSheetGraph(object):
     def __init__(self, nodes, edge_list):
@@ -41,14 +40,16 @@ class SpreadSheetGraph(object):
             color = "blue" if node["type"] == "Header" else "green"
             g.node(str(i), color=color)
 
-        all_true = reduce(lambda x,y: x and y, self.edge_toggle_list)
-        all_false = reduce(lambda x,y: not x and not y, self.edge_toggle_list)
+        max_value = max(self.edge_toggle_list)
+        min_value = min(self.edge_toggle_list)
 
         for i, edge in enumerate(self.edge_list):
             enabled = self.edge_toggle_list[i]
             style = "solid" if edge["overlap_type"] == "horizontal" else "dashed"
             color = "green" if enabled else "red"
-            if all_true or all_false:
+            if max_value == min_value:
+                # Array consists only of true or only of false values
+                pass
                 color = "black"
             g.edge(str(edge["source"]), str(edge["dest"]), style=style, color=color)
         g.render(out)

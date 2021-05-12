@@ -2,12 +2,13 @@
 import math
 import random
 from typing import List
+import logging
 
-from GeneticSearchConfiguration import GeneticSearchConfiguration, DEFAULT_CONFIG
+from GeneticSearchConfiguration import GeneticSearchConfiguration
 from SpreadSheetGraph import SpreadSheetGraph
 from Rater import Rater
 
-random.seed(1)
+logger = logging.getLogger(__name__)
 
 class GeneticSearch(object):
     def __init__(
@@ -34,7 +35,8 @@ class GeneticSearch(object):
     def print_toggle_list(toggle_list):
         return ''.join([bin(x)[2] for x in toggle_list])
 
-    def genetic_search(self):
+    def run(self):
+        logger.info("Creating initial population...")
         n_pop = int(math.log10(len(self.graph.edge_list) * 100))
         n_offspring = n_pop
         n_survivors = n_pop
@@ -53,18 +55,25 @@ class GeneticSearch(object):
                     hof_individual = pop[i]
                     hof_rating = ratings[i]
 
+        logger.info("Starting genetic search...")
         for generation in range(self.configuration.n_gen):
+            logger.debug(f"Generation {generation}")
             # createOffsprings
+            logger.debug("\tCreating children from population...")
             children = [self.child_from_popultaion(pop) for _ in range(n_offspring)]
+
             # updateHallOfFame
+            logger.debug("\tUpdating Hall of Fame...")
             children_ratings = list(map(lambda individual: self.rate_edge_toggle_list(individual), children))
             for i in range(len(children)):
                 if children_ratings[i] < hof_rating:
                     _ = 1
                     hof_individual = children[i][:] # By value
                     hof_rating = children_ratings[i]
+                    logger.debug(f"\t\tNew Hall of Fame with a rating of {hof_rating}")
                     _ = 1
             # selectFittest
+            logger.debug("\Selecting fittest for next population...")
             pop, ratings = self.select_fittest(pop, ratings, children, children_ratings, n_survivors, self.configuration.rooster_size)
 
         return hof_individual, hof_rating
@@ -136,7 +145,8 @@ class GeneticSearch(object):
 
 def test():
     print("Running genetic search test")
-    print(DEFAULT_CONFIG)
+    config = GeneticSearchConfiguration()
+    print(config)
     class MockSheetGraph():
         def __init__(self, edge_count):
             self.edge_list = [1 for _ in range(edge_count)]
@@ -145,10 +155,10 @@ def test():
     search = GeneticSearch(
         MockSheetGraph(edge_count),
         Rater(),
-        DEFAULT_CONFIG,
+        config,
     )
 
-    fittest, fittest_rating = search.genetic_search()
+    fittest, fittest_rating = search.run()
     print("-----------\nResult:")
     print(f"\tFittest: {GeneticSearch.print_toggle_list(fittest)} (Rating: {fittest_rating})")
     print(f"\tTrue Count of Fittest: {sum(fittest)}")
