@@ -38,23 +38,71 @@ class SpreadSheetGraph(object):
 
         return SpreadSheetGraph(lr_list, edge_list)
 
+    def enabled_edges(self):
+        """Returns all enabled edges"""
+        return [edge for i, edge in enumerate(self.edge_list) if self.edge_toggle_list[i] is True]
+
+    def disabled_edges(self):
+        """Returns all disabled edges"""
+        return [edge for i, edge in enumerate(self.edge_list) if self.edge_toggle_list[i] is False]
+
     def visualize(self, format="png", engine="dot", out="out"):
         """Uses graphviz to visualize the current graph"""
         g = graphviz.Graph(format=format, engine=engine, strict=True)
-        for i, node in enumerate(self.nodes):
-            color = "blue" if node["type"] == "Header" else "green"
-            g.node(str(i), color=color)
 
-        max_value = max(self.edge_toggle_list)
-        min_value = min(self.edge_toggle_list)
+        # Add nodes for each partition
+        partitions = self.get_partitions()
+        for i, partition in enumerate(partitions):
+            p = graphviz.Graph(f"cluster{i}")
+            for node_index in partition:
+                color = "blue" if self.nodes[node_index]["type"] == "Header" else "green"
+                p.node(str(node_index), color=color)
+            g.subgraph(p)
 
-        for i, edge in enumerate(self.edge_list):
-            enabled = self.edge_toggle_list[i]
+        # Add edges
+        for edge in self.enabled_edges():
+            color = "green"
             style = "solid" if edge["overlap_type"] == "horizontal" else "dashed"
-            color = "green" if enabled else "red"
-            if max_value == min_value:
-                # Array consists only of true or only of false values
-                pass
-                color = "black"
             g.edge(str(edge["source"]), str(edge["dest"]), style=style, color=color)
+        for edge in self.disabled_edges():
+            color = "red"
+            style = "solid" if edge["overlap_type"] == "horizontal" else "dashed"
+            g.edge(str(edge["source"]), str(edge["dest"]), style=style, color=color)
+
         g.render(out)
+
+    def build_adj_list(self, edges):
+        """Creates a adj list from the edge list and the edge toggle list"""
+        adj_list = [set() for _ in range(len(self.nodes))]
+        for edge in edges:
+            source = edge["source"]
+            dest = edge["dest"]
+            adj_list[source].add(dest)
+            adj_list[dest].add(source)
+
+        return [list(l) for l in adj_list]
+
+    def get_partitions(self):
+        """Returns graph components in regard of toggled edges"""
+        partitions = []
+
+        visited = []
+        queue = []
+        adj_list = self.build_adj_list(self.enabled_edges())
+        for i, node in enumerate(self.nodes):
+            if i in visited:
+                # Node already marked and therefor already part of a partition
+                continue
+            visited.append(i)
+            partition = [i]
+            queue = adj_list[i]
+            while queue:
+                node = queue.pop()
+                if node in visited:
+                    continue
+                visited.append(node)
+                partition.append(node)
+                queue.extend(adj_list[node])
+            partitions.append(partition)
+
+        return partitions
