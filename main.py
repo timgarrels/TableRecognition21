@@ -3,7 +3,7 @@ from openpyxl import load_workbook, Workbook
 import openpyxl
 import random
 
-from label_region_preprocessing import LabelRegionPreprocessor
+from LabelRegionPreprocessor import LabelRegionPreprocessor
 from SpreadSheetGraph import SpreadSheetGraph
 
 

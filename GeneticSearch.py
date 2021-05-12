@@ -152,6 +152,7 @@ class GeneticSearch(object):
 
 def test():
     print("Running genetic search test")
+    print(DEFAULT_CONFIG)
     class MockSheetGraph():
         def __init__(self, edge_count):
             self.edge_list = [1 for _ in range(edge_count)]
