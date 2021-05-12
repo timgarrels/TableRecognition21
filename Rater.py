@@ -20,7 +20,7 @@ class Rater(object):
     def mock_metric(self, graph: SpreadSheetGraph) -> float:
         return sum(graph.edge_toggle_list)
 
-    def rate_partition(self, graph: SpreadSheetGraph, edge_toggle_list: List[bool]) -> float:
+    def rate(self, graph: SpreadSheetGraph, edge_toggle_list: List[bool]) -> float:
         # Create graph copy with that partition
         new_graph = graph
         new_graph.edge_toggle_list = edge_toggle_list

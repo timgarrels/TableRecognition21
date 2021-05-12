@@ -210,6 +210,7 @@ class LabelRegionPreprocessor(object):
         return lrs
 
     def preproces_annotations(self, annotation_file, spreadsheet_file, sheet_name):
+        """Reads annotations and returns label regions, which coordinates start at one"""
         logger.debug("Reading Spreadsheet...")
         self._annotation_file = annotation_file
         self._spreadsheet_file = spreadsheet_file

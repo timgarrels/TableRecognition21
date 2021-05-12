@@ -1,6 +1,6 @@
 """Creates a Graph from Label Regions"""
 import graphviz
-
+from typing import List
 class SpreadSheetGraph(object):
     def __init__(self, nodes, edge_list):
         self.nodes = nodes
@@ -50,11 +50,11 @@ class SpreadSheetGraph(object):
         """Uses graphviz to visualize the current graph"""
         g = graphviz.Graph(format=format, engine=engine, strict=True)
 
-        # Add nodes for each partition
-        partitions = self.get_partitions()
-        for i, partition in enumerate(partitions):
+        # Add nodes for each component
+        components = self.get_components()
+        for i, component in enumerate(components):
             p = graphviz.Graph(f"cluster{i}")
-            for node_index in partition:
+            for node_index in component:
                 color = "blue" if self.nodes[node_index]["type"] == "Header" else "green"
                 p.node(str(node_index), color=color)
             g.subgraph(p)
@@ -82,27 +82,27 @@ class SpreadSheetGraph(object):
 
         return [list(l) for l in adj_list]
 
-    def get_partitions(self):
+    def get_components(self) -> List[int]:
         """Returns graph components in regard of toggled edges"""
-        partitions = []
+        components = []
 
         visited = []
         queue = []
         adj_list = self.build_adj_list(self.enabled_edges())
         for i, node in enumerate(self.nodes):
             if i in visited:
-                # Node already marked and therefor already part of a partition
+                # Node already marked and therefor already part of a component
                 continue
             visited.append(i)
-            partition = [i]
+            component = [i]
             queue = adj_list[i]
             while queue:
                 node = queue.pop()
                 if node in visited:
                     continue
                 visited.append(node)
-                partition.append(node)
+                component.append(node)
                 queue.extend(adj_list[node])
-            partitions.append(partition)
+            components.append(component)
 
-        return partitions
+        return components

@@ -11,7 +11,7 @@ from Rater import Rater
 logger = logging.getLogger(__name__)
 
 # TODO: This is only the genetic way, it is noted that for graphs with |V| <= 10
-# TODO: an exhausitve search is possible
+#       an exhausitve search is possible
 class GeneticSearch(object):
     def __init__(
         self,
@@ -24,11 +24,11 @@ class GeneticSearch(object):
         self.configuration = configuration
 
     def rate_edge_toggle_list(self, edge_toggle_list: List[bool]):
-        return self.rater.rate_partition(self.graph, edge_toggle_list)
+        return self.rater.rate(self.graph, edge_toggle_list)
 
     def random_edge_toggle_list(self) -> List[bool]:
-        """Creates a single, random edge toggle list
-        # TODO: Implement Seed"""
+        """Creates a single, random edge toggle list"""
+        # TODO: Implement Seed
         if self.configuration.seed is not None:
             raise NotImplementedError("Seed is not implemented!")
         return [random.choice([True, False]) for _ in range(len(self.graph.edge_list))]
