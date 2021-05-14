@@ -1,14 +1,16 @@
 """Creates a Graph from Label Regions"""
+from typing import List
 import graphviz
 from typing import List
 class SpreadSheetGraph(object):
-    def __init__(self, nodes, edge_list):
+    def __init__(self, nodes, edge_list, sheet):
         self.nodes = nodes
         self.edge_list = edge_list
+        self.sheet = sheet
 
         self.edge_toggle_list = [True for _ in range(len(self.edge_list))]
 
-    def from_label_regions(lr_list):
+    def from_label_regions_and_sheet(lr_list, sheet):
         """Creates a graph from label regions
         Refer to `A Genetic-based Search for Adaptive TableRecognition in Spreadsheets.pdf`
         for the approach"""
@@ -36,7 +38,7 @@ class SpreadSheetGraph(object):
                                 "overlap_type": "horizontal" if horizontal_overlap else "vertical"
                             })
 
-        return SpreadSheetGraph(lr_list, edge_list)
+        return SpreadSheetGraph(lr_list, edge_list, sheet)
 
     def enabled_edges(self):
         """Returns all enabled edges"""

@@ -13,6 +13,25 @@ class GraphComponent(object):
         self.label_regions = component
 
     @property
+    def bounding_box(self):
+        """Returns the minimum bounding box of this component"""
+        if self._bounding_box is None:
+            top_lefts = [self.graph.nodes[i]["top_left"] for i in self.label_regions]
+            bottom_rights = [self.graph.nodes[i]["bottom_right"] for i in self.label_regions]
+
+            min_xs = [top_left[0] for top_left in top_lefts]
+            min_ys = [top_left[1] for top_left in top_lefts]
+            max_xs = [bottom_right[0] for bottom_right in bottom_rights]
+            max_ys = [bottom_right[1] for bottom_right in bottom_rights]
+
+            min_x = min(min_xs)
+            min_y = min(min_ys)
+            max_x = max(max_xs)
+            max_y = max(max_ys)
+            self._bounding_box = {"top_left": (min_x, min_y), "bottom_right": (max_x, max_y)}
+        return self._bounding_box
+
+    @property
     def data(self):
         """Returns all data label regions"""
         if self._data is None:
@@ -68,3 +87,19 @@ class GraphComponent(object):
     def rheight(self, r_index):
         """Returns the height of the row :r_index"""
         return self.graph.sheet.row_dimensions[r_index].height
+
+    @property
+    def get_header_groups(self):
+        if self._header_groups is None:
+            # TODO: Merge and list header groups
+            self._header_groups = 1
+        return self._header_groups
+
+    @property
+    def avg_waec(self):
+        # Assumption: "adjacent empty columns" are just all empty columns in our partition
+        bounds = self.bounding_box
+        min_x = bounds["top_left"][0]
+        max_x = bounds["bottom_right"][0]
+        empty_cols = []
+        for col in self.graph.ws.iter_cols(min_col=min_x, max_col=max_x, values_only=True):
