@@ -49,7 +49,7 @@ def main():
         sheet_graph,
         # TODO: Rater should be trained
         Rater(),
-        GeneticSearchConfiguration(rand_mut_p=0.1, cross_mut_p=0.5, n_gen=1000),
+        GeneticSearchConfiguration(rand_mut_p=0.1, cross_mut_p=0.5, n_gen=200),
     )
 
     fittest, fittest_rating = genetic_search.run()

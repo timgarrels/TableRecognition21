@@ -3,11 +3,13 @@ import math
 import random
 from typing import List
 import logging
+import sys
 
 from GeneticSearchConfiguration import GeneticSearchConfiguration
 from SpreadSheetGraph import SpreadSheetGraph
 from Rater import Rater
 
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # TODO: This is only the genetic way, it is noted that for graphs with |V| <= 10
@@ -39,7 +41,7 @@ class GeneticSearch(object):
 
     def run(self):
         logger.info("Creating initial population...")
-        n_pop = int(math.log10(len(self.graph.edge_list) * 100))
+        n_pop = int(math.log10(len(self.graph.edge_list)) * 100 + 0.5)
         n_offspring = n_pop
         n_survivors = n_pop
 
@@ -56,6 +58,8 @@ class GeneticSearch(object):
                 if ratings[i] < hof_rating:
                     hof_individual = pop[i]
                     hof_rating = ratings[i]
+
+        logger.debug(f"Fittest: {self.print_toggle_list(hof_individual)}")
 
         logger.info("Starting genetic search...")
         for generation in range(self.configuration.n_gen):
@@ -153,10 +157,16 @@ def test():
         def __init__(self, edge_count):
             self.edge_list = [1 for _ in range(edge_count)]
 
-    edge_count = 10
+    class MockRater():
+        def __init__(self):
+            pass
+        def rate(self, graph, edge_toggle_list):
+            return sum(edge_toggle_list)
+
+    edge_count = 100
     search = GeneticSearch(
         MockSheetGraph(edge_count),
-        Rater(),
+        MockRater(),
         config,
     )
 
