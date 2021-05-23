@@ -22,29 +22,64 @@ class SpreadSheetGraph(object):
         """Creates a graph from label regions
         Refer to `A Genetic-based Search for Adaptive TableRecognition in Spreadsheets.pdf`
         for the approach"""
+        # WARNING: Based on the assumption, that each row index / col index can match only once
+        # That means that three regions H1, D1, H2 that span the exact same cols and are directly on top of each other
+        # That H1 is not connected to H2, because the edge H1-D1 already uses all col indices
         logger.info("Creating Spreadsheet Graph...")
         existing_edges = []
         edge_list = []
-        for i, source in enumerate(lr_list):
-            for j, dest in enumerate(lr_list):
-                if i != j:
-                    # Two different label regions, find overlap
-                    source_xs = range(source['top_left'][0], source['bottom_right'][0] + 1)
-                    source_ys = range(source['top_left'][1], source['bottom_right'][1] + 1)
-                    dest_xs = range(dest['top_left'][0], dest['bottom_right'][0] + 1)
-                    dest_ys = range(dest['top_left'][1], dest['bottom_right'][1] + 1)
 
-                    horizontal_overlap = True if len(set(source_xs).intersection(dest_xs)) > 0 else False
-                    vertical_overlap = True if len(set(source_ys).intersection(dest_ys)) > 0 else False
+        for i, lr in enumerate(lr_list):
+            lr["id"] = i
 
-                    if horizontal_overlap or vertical_overlap:
-                        if (i, j) not in existing_edges and (j, i) not in existing_edges:
-                            # Make sure edges exist only once, regardless on order of source and dest
-                            existing_edges.extend([(i, j), (j, i)])
+        # Vertical Overlap
+        sorted_by_y = sorted(lr_list, key=lambda node: node['top_left'][1])
+        for i, source in enumerate(sorted_by_y):
+            source_xs = set(range(source['top_left'][0], source['bottom_right'][0] + 1))
+            for j, dest in enumerate(sorted_by_y):
+                dest_right_of_source = i < j
+                if dest_right_of_source:
+                    # Two different label regions, dest right of source
+                    dest_xs = set(range(dest['top_left'][0], dest['bottom_right'][0] + 1))
+
+                    intersection = source_xs.intersection(dest_xs)
+                    horizontal_overlap = True if len(intersection) > 0 else False
+                    source_xs = source_xs - dest_xs
+                    if horizontal_overlap:
+                        # Make sure edges exist only once, regardless on order of source and dest
+                        s_id = source["id"]
+                        d_id = dest["id"]
+                        if (s_id, d_id) not in existing_edges and (d_id, s_id) not in existing_edges:
+                            existing_edges.extend([(s_id, d_id), (d_id, s_id)])
                             edge_list.append({
-                                "source": i,
-                                "dest": j,
-                                "overlap_type": "horizontal" if horizontal_overlap else "vertical"
+                                "source": s_id,
+                                "dest": d_id,
+                                "overlap_type": "vertical"
+                            })
+
+        # Horizontal Overlap
+        sorted_by_x = sorted(lr_list, key=lambda node: node['top_left'][0])
+        for i, source in enumerate(sorted_by_x):
+            source_ys = set(range(source['top_left'][1], source['bottom_right'][1] + 1))
+            for j, dest in enumerate(sorted_by_x):
+                dest_bottom_of_source = i < j
+                if dest_bottom_of_source:
+                    # Two different label regions, dest bottom of source
+                    dest_ys = set(range(dest['top_left'][1], dest['bottom_right'][1] + 1))
+
+                    intersection = source_ys.intersection(dest_ys)
+                    vertical_overlap = True if len(intersection) > 0 else False
+                    source_ys = source_ys - dest_ys
+                    if vertical_overlap:
+                        # Make sure edges exist only once, regardless on order of source and dest
+                        s_id = source["id"]
+                        d_id = dest["id"]
+                        if (s_id, d_id) not in existing_edges and (d_id, s_id) not in existing_edges:
+                            existing_edges.extend([(s_id, d_id), (d_id, s_id)])
+                            edge_list.append({
+                                "source": s_id,
+                                "dest": d_id,
+                                "overlap_type": "horizontal"
                             })
 
         return SpreadSheetGraph(lr_list, edge_list, sheet)
