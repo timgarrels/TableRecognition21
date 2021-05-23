@@ -11,6 +11,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 from LabelRegionPreprocessor import LabelRegionPreprocessor
 from SpreadSheetGraph import SpreadSheetGraph
 from GeneticSearch import GeneticSearch
+from ExhaustiveSearch import ExhaustiveSearch
 
 logger = logging.getLogger(__name__)
 
@@ -44,15 +45,24 @@ def main():
     logger.info("Visualizing Spreadsheet Graph...")
     sheet_graph.visualize(out=join(VISUALIZATIONS_DIR, 'original_graph'))
 
-    logger.info("Running Genetic Search...")
-    genetic_search = GeneticSearch(
-        sheet_graph,
-        # TODO: Rater should be trained
-        Rater(),
-        GeneticSearchConfiguration(rand_mut_p=0.1, cross_mut_p=0.5, n_gen=200),
-    )
+    if len(sheet_graph.nodes) <= 10:
+        # Less than 11 nodes, do exhaustive search
+        # TODO: Implement exhaustive search
+        logger.info("Running Exhaustive Search...")
+        search = ExhaustiveSearch(
+            sheet_graph,
+            Rater(),
+        )
+    else:
+        logger.info("Running Genetic Search...")
+        search = GeneticSearch(
+            sheet_graph,
+            # TODO: Rater should be trained
+            Rater(),
+            GeneticSearchConfiguration(rand_mut_p=0.1, cross_mut_p=0.5, n_gen=200),
+        )
 
-    fittest, fittest_rating = genetic_search.run()
+    fittest, fittest_rating = search.run()
     logger.debug(f"Best rating: {fittest_rating}")
 
     logger.info("Visualizaing Fittest Graph Partition...")

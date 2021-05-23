@@ -12,8 +12,6 @@ from Rater import Rater
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# TODO: This is only the genetic way, it is noted that for graphs with |V| <= 10
-#       an exhausitve search is possible
 class GeneticSearch(object):
     def __init__(
         self,
@@ -41,7 +39,7 @@ class GeneticSearch(object):
 
     def run(self):
         logger.info("Creating initial population...")
-        n_pop = int(math.log10(len(self.graph.edge_list)) * 100 + 0.5)
+        n_pop = math.ceil(math.log10(len(self.graph.edge_list)) * 100)
         n_offspring = n_pop
         n_survivors = n_pop
 
