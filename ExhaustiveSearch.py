@@ -1,11 +1,9 @@
 """Implements genetic search on SpreadsheetGraphs"""
 import logging
-import sys
 
 from AbstractSearch import AbstractSearch
 from Rater import Rater
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -19,8 +17,11 @@ class ExhaustiveSearch(AbstractSearch):
         fittest_partition = None
         fittest_rating = None
         for n in range(numbers):
-            bitstring = '{0:08b}'.format(n)
+            bitstring = bin(n)[2:]
             toggle_list = [bool(int(bit)) for bit in bitstring]
+            missing_bits = bits - len(toggle_list)
+            toggle_list = [False for _ in range(missing_bits)] + toggle_list
+
             rating = self.rate_edge_toggle_list(toggle_list)
             if fittest_rating is None or rating < fittest_rating:
                 fittest_rating = rating

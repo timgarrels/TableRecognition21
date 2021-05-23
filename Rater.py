@@ -21,8 +21,8 @@ class Rater(object):
         # Create graph copy and let it represent the partition
         new_graph = graph
         new_graph.edge_toggle_list = edge_toggle_list
-        compoents = new_graph.get_components()
+        component = new_graph.get_components()
 
-        scores_per_compoents = []
+        scores_per_component = []
 
-        return sum(scores_per_compoents)
+        return sum(scores_per_component)

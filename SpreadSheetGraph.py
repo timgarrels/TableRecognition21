@@ -1,11 +1,9 @@
 """Creates a Graph from Label Regions"""
 import logging
-import sys
 from typing import List
 
 import graphviz
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 

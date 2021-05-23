@@ -1,24 +1,23 @@
 """Implements genetic search on SpreadsheetGraphs"""
-from AbstractSearch import AbstractSearch
+import logging
 import math
 import random
 from typing import List
-import logging
-import sys
 
+from AbstractSearch import AbstractSearch
 from GeneticSearchConfiguration import GeneticSearchConfiguration
-from SpreadSheetGraph import SpreadSheetGraph
 from Rater import Rater
+from SpreadSheetGraph import SpreadSheetGraph
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 class GeneticSearch(AbstractSearch):
     def __init__(
-        self,
-        graph: SpreadSheetGraph,
-        rater: Rater,
-        configuration: GeneticSearchConfiguration,
+            self,
+            graph: SpreadSheetGraph,
+            rater: Rater,
+            configuration: GeneticSearchConfiguration,
     ):
         self.configuration = configuration
         super().__init__(graph, rater)
@@ -66,19 +65,20 @@ class GeneticSearch(AbstractSearch):
             for i in range(len(children)):
                 if children_ratings[i] < hof_rating:
                     _ = 1
-                    hof_individual = children[i][:] # By value
+                    hof_individual = children[i][:]  # By value
                     hof_rating = children_ratings[i]
                     logger.debug(f"\t\tNew Hall of Fame with a rating of {hof_rating}")
                     _ = 1
             # selectFittest
             logger.debug("\Selecting fittest for next population...")
-            pop, ratings = self.select_fittest(pop, ratings, children, children_ratings, n_survivors, self.configuration.rooster_size)
+            pop, ratings = self.select_fittest(pop, ratings, children, children_ratings, n_survivors,
+                                               self.configuration.rooster_size)
 
         return hof_individual, hof_rating
 
     def child_from_popultaion(self, population: List[List[bool]]) -> List[bool]:
         """Generate a child toggle list for the next generation using a parent population and propabilities for the mutations"""
-        population = population[:] # By value
+        population = population[:]  # By value
         p = random.random()
         if p < self.configuration.rand_mut_p:
             # Do random mutation
@@ -101,13 +101,13 @@ class GeneticSearch(AbstractSearch):
             return random.choice(population)
 
     def select_fittest(
-        self,
-        parents: List[bool],
-        parent_ratings: List[float],
-        children: List[bool],
-        children_ratings: List[bool],
-        n_survivors: int,
-        rooster_size=3,
+            self,
+            parents: List[bool],
+            parent_ratings: List[float],
+            children: List[bool],
+            children_ratings: List[bool],
+            n_survivors: int,
+            rooster_size=3,
     ):
         participants = parents + children
         ratings = parent_ratings + children_ratings
@@ -145,6 +145,7 @@ def test():
     print("Running genetic search test")
     config = GeneticSearchConfiguration()
     print(config)
+
     class MockSheetGraph():
         def __init__(self, edge_count):
             self.edge_list = [1 for _ in range(edge_count)]
@@ -152,6 +153,7 @@ def test():
     class MockRater():
         def __init__(self):
             pass
+
         def rate(self, graph, edge_toggle_list):
             return sum(edge_toggle_list)
 
@@ -166,6 +168,7 @@ def test():
     print("-----------\nResult:")
     print(f"\tFittest: {GeneticSearch.print_toggle_list(fittest)} (Rating: {fittest_rating})")
     print(f"\tTrue Count of Fittest: {sum(fittest)}")
+
 
 if __name__ == "__main__":
     test()

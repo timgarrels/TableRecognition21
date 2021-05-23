@@ -1,18 +1,17 @@
-from GeneticSearchConfiguration import GeneticSearchConfiguration
-from Rater import Rater
-from LabelRegionPreprocessor import LabelRegionPreprocessor
-from SpreadSheetGraph import SpreadSheetGraph
-from GeneticSearch import GeneticSearch
-from ExhaustiveSearch import ExhaustiveSearch
-
-from os.path import join
-from openpyxl import load_workbook
 import logging
-
 import sys
+from os.path import join
+
+from openpyxl import load_workbook
+
+from ExhaustiveSearch import ExhaustiveSearch
+from GeneticSearch import GeneticSearch
+from GeneticSearchConfiguration import GeneticSearchConfiguration
+from LabelRegionPreprocessor import LabelRegionPreprocessor
+from Rater import Rater
+from SpreadSheetGraph import SpreadSheetGraph
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +58,7 @@ def main():
     fittest, fittest_rating = search.run()
     logger.debug(f"Best rating: {fittest_rating}")
 
-    logger.info("Visualizaing Fittest Graph Partition...")
+    logger.info("Visualizing Fittest Graph Partition...")
     sheet_graph.edge_toggle_list = fittest
     sheet_graph.visualize(out=join(VISUALIZATIONS_DIR, 'fittest_graph'))
 
