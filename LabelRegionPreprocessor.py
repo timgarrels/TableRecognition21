@@ -1,11 +1,11 @@
-import ntpath
 import json
+import logging
+import ntpath
+import random
+
+from openpyxl import load_workbook, Workbook
 from openpyxl.styles.colors import Color
 from openpyxl.styles.fills import PatternFill
-from openpyxl import load_workbook, Workbook
-import random
-import logging
-
 
 logger = logging.getLogger(__name__)
 
@@ -13,12 +13,14 @@ logger = logging.getLogger(__name__)
 def random_rgb_hex():
     """Creates a random rgb string like 00FF00FF"""
     return ''.join([hex(random.choice(range(16)))[2:] for _ in range(8)])
-class LabelRegionPreprocessor(object):
 
+
+class LabelRegionPreprocessor(object):
 
     @staticmethod
     def visualize_lrs(lrs, out):
         """Creates a colorful spreadsheet from the lr data"""
+        logger.info("Visualizing Label Regions...")
         wb = Workbook()
         ws = wb.create_sheet("Visualization")
         for i, lr in enumerate(lrs):
@@ -93,14 +95,14 @@ class LabelRegionPreprocessor(object):
         # order them
         rows = []
         for row_id in sorted(cell_rows.keys()):
-            row = sorted(cell_rows[row_id], key=lambda cell: cell["x"])
+            row = sorted(cell_rows[row_id], key=lambda single_cell: single_cell["x"])
             rows.append(row)
 
         return rows
 
     def _remove_empty_cells(self, cell_rows):
         """Removes empty cells from given rows
-        The paper assumes that only non-empty cells are annotaed
+        The paper assumes that only non-empty cells are annotated
         In our model annotations can span empty cells"""
         filtered_cell_rows = []
         for row in cell_rows:
@@ -116,8 +118,8 @@ class LabelRegionPreprocessor(object):
         """Returns whether the value at this cell is
         empty (only whitespace)"""
 
-         # Increase coordinates by one as our annotations are indexed
-         # starting from 0 and openpyxl is indexted starting from 1
+        # Increase coordinates by one as our annotations are indexed
+        # starting from 0 and openpyxl is indexted starting from 1
         return self._worksheet.cell(
             row=cell["y"] + 1,
             column=cell["x"] + 1,
@@ -134,8 +136,8 @@ class LabelRegionPreprocessor(object):
         for row in cell_rows:
             for i, cell in enumerate(row):
                 if (i < len(row) - 1):
-                    neighbours = cell['x'] + 1 == row[i+1]['x']
-                    same_type = cell['type'] == row[i+1]['type']
+                    neighbours = cell['x'] + 1 == row[i + 1]['x']
+                    same_type = cell['type'] == row[i + 1]['type']
                     if neighbours and same_type:
                         row[i + 1]['merge_left'] = True
             rows_with_merge_annotations.append(row)
@@ -170,7 +172,7 @@ class LabelRegionPreprocessor(object):
                     next_lr_id += 1
                 # Look for sequences below that match out label and bounds
                 if y < len(rows_with_sequences) - 1:
-                    for sequence_below in rows_with_sequences[y+1]:
+                    for sequence_below in rows_with_sequences[y + 1]:
                         same_type = sequence["type"] == sequence_below["type"]
                         same_min_x = sequence["start_x"] == sequence_below["start_x"]
                         same_max_x = sequence["stop_x"] == sequence_below["stop_x"]
@@ -229,6 +231,6 @@ class LabelRegionPreprocessor(object):
             cell_rows = self._remove_empty_cells(cell_rows)
 
         logger.debug("Merging Cells into Paper Label Regions...")
-        lrs =  self._merge_labled_cells_into_lrs(cell_rows)
+        lrs = self._merge_labled_cells_into_lrs(cell_rows)
 
         return lrs

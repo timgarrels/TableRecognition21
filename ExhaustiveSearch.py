@@ -1,29 +1,15 @@
 """Implements genetic search on SpreadsheetGraphs"""
-from typing import List
 import logging
 import sys
 
-from SpreadSheetGraph import SpreadSheetGraph
+from AbstractSearch import AbstractSearch
 from Rater import Rater
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class ExhaustiveSearch(object):
-    def __init__(
-        self,
-        graph: SpreadSheetGraph,
-        rater: Rater,
-    ):
-        self.graph = graph
-        self.rater = rater
 
-    def rate_edge_toggle_list(self, edge_toggle_list: List[bool]):
-        return self.rater.rate(self.graph, edge_toggle_list)
-
-    @staticmethod
-    def print_toggle_list(toggle_list):
-        return ''.join([bin(x)[2] for x in toggle_list])
+class ExhaustiveSearch(AbstractSearch):
 
     def run(self):
         logger.info("Running Exhaustive Search...")
@@ -51,9 +37,10 @@ def test():
             self.edge_list = [1 for _ in range(edge_count)]
             self.edge_toggle_list = [True for _ in range(len(self.edge_list))]
 
-    class MockRater():
+    class MockRater(Rater):
         def __init__(self):
             pass
+
         def rate(self, graph, edge_toggle_list):
             return sum(edge_toggle_list)
 
@@ -67,6 +54,7 @@ def test():
     print("-----------\nResult:")
     print(f"\tFittest: {ExhaustiveSearch.print_toggle_list(fittest)} (Rating: {fittest_rating})")
     print(f"\tTrue Count of Fittest: {sum(fittest)}")
+
 
 if __name__ == "__main__":
     test()

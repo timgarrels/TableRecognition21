@@ -1,4 +1,5 @@
 """Implements genetic search on SpreadsheetGraphs"""
+from AbstractSearch import AbstractSearch
 import math
 import random
 from typing import List
@@ -12,19 +13,15 @@ from Rater import Rater
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class GeneticSearch(object):
+class GeneticSearch(AbstractSearch):
     def __init__(
         self,
         graph: SpreadSheetGraph,
         rater: Rater,
         configuration: GeneticSearchConfiguration,
     ):
-        self.graph = graph
-        self.rater = rater
         self.configuration = configuration
-
-    def rate_edge_toggle_list(self, edge_toggle_list: List[bool]):
-        return self.rater.rate(self.graph, edge_toggle_list)
+        super().__init__(graph, rater)
 
     def random_edge_toggle_list(self) -> List[bool]:
         """Creates a single, random edge toggle list"""
@@ -33,11 +30,8 @@ class GeneticSearch(object):
             raise NotImplementedError("Seed is not implemented!")
         return [random.choice([True, False]) for _ in range(len(self.graph.edge_list))]
 
-    @staticmethod
-    def print_toggle_list(toggle_list):
-        return ''.join([bin(x)[2] for x in toggle_list])
-
     def run(self):
+        logger.info("Running Genetic Search...")
         logger.info("Creating initial population...")
         n_pop = math.ceil(math.log10(len(self.graph.edge_list)) * 100)
         n_offspring = n_pop

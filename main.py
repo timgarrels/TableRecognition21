@@ -1,20 +1,20 @@
 from GeneticSearchConfiguration import GeneticSearchConfiguration
 from Rater import Rater
-from os.path import join
-from openpyxl import load_workbook
-from openpyxl.utils import get_column_letter
-import logging
-
-import sys
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-
 from LabelRegionPreprocessor import LabelRegionPreprocessor
 from SpreadSheetGraph import SpreadSheetGraph
 from GeneticSearch import GeneticSearch
 from ExhaustiveSearch import ExhaustiveSearch
 
-logger = logging.getLogger(__name__)
+from os.path import join
+from openpyxl import load_workbook
+import logging
 
+import sys
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+
+
+logger = logging.getLogger(__name__)
 
 DATA_DIR = "data"
 VISUALIZATIONS_DIR = "visualizations"
@@ -36,25 +36,19 @@ def main():
         SPREADSHEET_FILE,
         sheetname,
     )
-    logger.info("Visualizing Label Regions...")
     LabelRegionPreprocessor.visualize_lrs(label_regions, out=join(VISUALIZATIONS_DIR, 'lrs.xlsx'))
 
-    logger.info("Creating Spreadsheet Graph...")
     sheet_graph = SpreadSheetGraph.from_label_regions_and_sheet(label_regions, sheet)
     logger.debug(f"Edge Count: {len(sheet_graph.edge_list)}")
-    logger.info("Visualizing Spreadsheet Graph...")
     sheet_graph.visualize(out=join(VISUALIZATIONS_DIR, 'original_graph'))
 
     if len(sheet_graph.nodes) <= 10:
         # Less than 11 nodes, do exhaustive search
-        # TODO: Implement exhaustive search
-        logger.info("Running Exhaustive Search...")
         search = ExhaustiveSearch(
             sheet_graph,
             Rater(),
         )
     else:
-        logger.info("Running Genetic Search...")
         search = GeneticSearch(
             sheet_graph,
             # TODO: Rater should be trained

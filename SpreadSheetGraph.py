@@ -1,7 +1,14 @@
 """Creates a Graph from Label Regions"""
+import logging
+import sys
 from typing import List
+
 import graphviz
-from typing import List
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
 class SpreadSheetGraph(object):
     def __init__(self, nodes, edge_list, sheet):
         self.nodes = nodes
@@ -10,10 +17,12 @@ class SpreadSheetGraph(object):
 
         self.edge_toggle_list = [True for _ in range(len(self.edge_list))]
 
+    @staticmethod
     def from_label_regions_and_sheet(lr_list, sheet):
         """Creates a graph from label regions
         Refer to `A Genetic-based Search for Adaptive TableRecognition in Spreadsheets.pdf`
         for the approach"""
+        logger.info("Creating Spreadsheet Graph...")
         existing_edges = []
         edge_list = []
         for i, source in enumerate(lr_list):
@@ -48,9 +57,9 @@ class SpreadSheetGraph(object):
         """Returns all disabled edges"""
         return [edge for i, edge in enumerate(self.edge_list) if self.edge_toggle_list[i] is False]
 
-    def visualize(self, format="png", engine="dot", out="out"):
+    def visualize(self, output_format="png", engine="dot", out="out"):
         """Uses graphviz to visualize the current graph"""
-        g = graphviz.Graph(format=format, engine=engine, strict=True)
+        g = graphviz.Graph(format=output_format, engine=engine, strict=True)
 
         # Add nodes for each component
         components = self.get_components()
@@ -82,18 +91,17 @@ class SpreadSheetGraph(object):
             adj_list[source].add(dest)
             adj_list[dest].add(source)
 
-        return [list(l) for l in adj_list]
+        return [list(node_connections) for node_connections in adj_list]
 
-    def get_components(self) -> List[int]:
+    def get_components(self) -> List[List[int]]:
         """Returns graph components in regard of toggled edges"""
         components = []
 
         visited = []
-        queue = []
         adj_list = self.build_adj_list(self.enabled_edges())
         for i, node in enumerate(self.nodes):
             if i in visited:
-                # Node already marked and therefor already part of a component
+                # Node already marked and therefore already part of a component
                 continue
             visited.append(i)
             component = [i]

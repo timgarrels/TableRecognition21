@@ -1,6 +1,8 @@
 """Class which implements Metrics and Weight Training for Partition Evaluation"""
-from typing import Callable, Dict, List
+from typing import List
+
 from SpreadSheetGraph import SpreadSheetGraph
+
 
 # TODO: Implement metrics (how to access cell data? via graph?)
 # TODO: Implement weight training
@@ -22,6 +24,5 @@ class Rater(object):
         compoents = new_graph.get_components()
 
         scores_per_compoents = []
-
 
         return sum(scores_per_compoents)

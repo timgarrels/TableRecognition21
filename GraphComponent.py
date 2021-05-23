@@ -94,7 +94,7 @@ class GraphComponent(object):
             # TODO: Merge and list header groups
             self._header_groups = 1
         return self._header_groups
-
+ 
     @property
     def avg_waec(self):
         # Assumption: "adjacent empty columns" are just all empty columns in our partition
