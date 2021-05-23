@@ -49,9 +49,13 @@ class SpreadSheetGraph(object):
                         d_id = dest["id"]
                         if (s_id, d_id) not in existing_edges and (d_id, s_id) not in existing_edges:
                             existing_edges.extend([(s_id, d_id), (d_id, s_id)])
+
+                            connection_type = "-".join(sorted([source["type"][0], dest["type"][0]]))
                             edge_list.append({
                                 "source": s_id,
                                 "dest": d_id,
+                                "connection_type": connection_type,
+                                "aligned_indices": intersection,
                                 "overlap_type": "vertical"
                             })
 
@@ -74,10 +78,14 @@ class SpreadSheetGraph(object):
                         d_id = dest["id"]
                         if (s_id, d_id) not in existing_edges and (d_id, s_id) not in existing_edges:
                             existing_edges.extend([(s_id, d_id), (d_id, s_id)])
+
+                            connection_type = "-".join(sorted([source["type"][0], dest["type"][0]]))
                             edge_list.append({
                                 "source": s_id,
                                 "dest": d_id,
-                                "overlap_type": "horizontal"
+                                "connection_type": connection_type,
+                                "aligned_indices": intersection,
+                                "overlap_type": "vertical"
                             })
 
         return SpreadSheetGraph(lr_list, edge_list, sheet)
