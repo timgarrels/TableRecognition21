@@ -8,7 +8,8 @@ from openpyxl import load_workbook, Workbook
 from openpyxl.styles.colors import Color
 from openpyxl.styles.fills import PatternFill
 
-from LabelRegion import LabelRegion
+from labelregions.LabelRegion import LabelRegion
+from labelregions.LabelRegionType import LabelRegionType
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +30,12 @@ class LabelRegionPreprocessor(object):
         for i, lr in enumerate(lrs):
             color = Color(rgb=random_rgb_hex())
             fill = PatternFill(patternType='solid', fgColor=color)
-            for x in range(lr.top, lr.bottom + 1):
-                for y in range(lr.left, lr.right + 1):
+            # Y is our row, X our column
+            for y in range(lr.top, lr.bottom + 1):
+                for x in range(lr.left, lr.right + 1):
+                    # Cell is referred by row, col
                     d = ws.cell(y, x)
-                    d.value = f"{i} - {lr.type}"
+                    d.value = f"{i} - {str(lr.type.value)}"
                     d.fill = fill
         wb.save(out)
 
@@ -203,12 +206,12 @@ class LabelRegionPreprocessor(object):
 
             y_values = list(map(lambda part: part["y"], lr_parts))
             # Annotations are 0-index, but openpyxl indexes like excel, starting at 1
-            top = start_x + 1
-            left = min(y_values) + 1
-            bottom = stop_x + 1
-            right = max(y_values) + 1
+            top = min(y_values) + 1
+            left = start_x + 1
+            bottom = max(y_values) + 1
+            right = stop_x + 1
 
-            lrs.append(LabelRegion(lr_id, lr_type, top, left, bottom, right))
+            lrs.append(LabelRegion(lr_id, LabelRegionType(lr_type), top, left, bottom, right))
         return lrs
 
     def preproces_annotations(self, annotation_file, spreadsheet_file, sheet_name) -> List[LabelRegion]:

@@ -1,5 +1,5 @@
-from BoundingBox import BoundingBox
-from LabelRegionType import LabelRegionType
+from labelregions.BoundingBox import BoundingBox
+from labelregions.LabelRegionType import LabelRegionType
 
 
 class LabelRegion(BoundingBox):
@@ -11,3 +11,6 @@ class LabelRegion(BoundingBox):
     @staticmethod
     def from_bounding_box(lr_id: int, lr_type: LabelRegionType, box: BoundingBox):
         return LabelRegion(lr_id, lr_type, box.top, box.left, box.bottom, box.right)
+
+    def __str__(self):
+        return str(self.id)

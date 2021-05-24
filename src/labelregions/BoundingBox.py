@@ -8,7 +8,7 @@ class BoundingBox(object):
         self.bottom: int = bottom
         self.right: int = right
 
-    def bounding_box_intersect(self, box: BoundingBox):
+    def intersect(self, box: BoundingBox):
         """Returns whether two bounding boxes intersect"""
         # TODO: Can be done smarter and more performant by top_left bottom_right comparison
         x_overlap = set(self.get_all_x()).intersection(box.get_all_x())

@@ -1,9 +1,9 @@
 from enum import Enum
 from typing import List
 
-from BoundingBox import BoundingBox
-from LabelRegion import LabelRegion
-from LabelRegionType import LabelRegionType
+from labelregions.BoundingBox import BoundingBox
+from labelregions.LabelRegion import LabelRegion
+from labelregions.LabelRegionType import LabelRegionType
 
 
 class AlignmentType(Enum):
@@ -54,3 +54,6 @@ class Edge(object):
             left = min(self.source.right, self.destination.right)
             right = max(self.source.left, self.destination.left)
         return BoundingBox(top, left, bottom, right)
+
+    def __str__(self):
+        return f"E-{self.source}-{self.destination}"

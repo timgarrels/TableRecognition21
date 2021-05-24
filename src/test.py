@@ -5,15 +5,15 @@ from os.path import join
 
 from openpyxl import load_workbook
 
-from LabelRegionPreprocessor import LabelRegionPreprocessor
-from SpreadSheetGraph import SpreadSheetGraph
+from graph.SpreadSheetGraph import SpreadSheetGraph
+from labelregions.LabelRegionPreprocessor import LabelRegionPreprocessor
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
-DATA_DIR = "data"
-VISUALIZATIONS_DIR = "visualizations"
+DATA_DIR = "../data"
+VISUALIZATIONS_DIR = "../visualizations"
 ANNOTATIONS = "annotations_elements.json"
 SPREADSHEET = "andrea_ring__3__HHmonthlyavg.xlsx"
 ANNOTATION_FILE = join(DATA_DIR, ANNOTATIONS)

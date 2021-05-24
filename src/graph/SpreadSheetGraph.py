@@ -5,11 +5,12 @@ from typing import List, Dict, Set
 import graphviz
 from openpyxl.worksheet.worksheet import Worksheet
 
-from Edge import Edge, AlignmentType
-from LabelRegion import LabelRegion
-from LabelRegionType import LabelRegionType
+from graph.Edge import Edge, AlignmentType
+from labelregions.LabelRegion import LabelRegion
+from labelregions.LabelRegionType import LabelRegionType
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class SpreadSheetGraph(object):
@@ -21,7 +22,16 @@ class SpreadSheetGraph(object):
 
         self.edge_toggle_list: List[bool] = [True for _ in range(len(self.edge_list))]
 
-        self.node_edges_lookup: Dict[LabelRegion, Set[Edge]] = {}.fromkeys(self.nodes, set())
+        self.node_edges_lookup: Dict[LabelRegion, Set[Edge]] = {}
+        for node in self.nodes:
+            # Dont use `.fromkeys(self.nodes, set())` here, as the set is then created only once and the same reference
+            # in all keys:
+            # d = {}.fromkeys([1,2], set()
+            # d[0].add(1)
+            # d
+            # > {0: {1}, 1: {1}}
+            self.node_edges_lookup[node] = set()
+
         for edge in self.edge_list:
             self.node_edges_lookup[edge.source].add(edge)
             self.node_edges_lookup[edge.destination].add(edge)
@@ -32,8 +42,8 @@ class SpreadSheetGraph(object):
         def get_partner_from_edge(edge: Edge):
             return edge.source if edge.source != node else edge.destination
 
-        nodes = [get_partner_from_edge(edge) for edge in edges]
-        return nodes
+        nodes = set([get_partner_from_edge(edge) for edge in edges])
+        return list(nodes)
 
     @staticmethod
     def from_label_regions_and_sheet(lr_list: List[LabelRegion], sheet: Worksheet):
@@ -43,24 +53,26 @@ class SpreadSheetGraph(object):
         # WARNING: Based on the assumption, that each row index / col index can match only once
         # That means that three regions H1, D1, H2 that span the exact same cols and are directly on top of each other
         # That H1 is not connected to H2, because the edge H1-D1 already uses all col indices
+        # TODO: Implement Assumption that indices get eaten up
         logger.info("Creating Spreadsheet Graph...")
         existing_edges = []
         edge_list = []
 
         # Vertical Overlap
-        sorted_by_y = sorted(lr_list, key=lambda node: node.left)
+        sorted_by_y = sorted(lr_list, key=lambda node: node.top)
         for i, source in enumerate(sorted_by_y):
             source_xs = set(source.get_all_x())
             for j, destination in enumerate(sorted_by_y):
-                destination_right_of_source = i < j
-                if destination_right_of_source:
+                destination_bottom_of_source = i < j
+                if destination_bottom_of_source:
                     # Two different label regions, dest right of source
                     destination_xs = set(destination.get_all_x())
 
                     intersection = source_xs.intersection(destination_xs)
-                    horizontal_overlap = True if len(intersection) > 0 else False
-                    source_xs = source_xs - destination_xs
-                    if horizontal_overlap:
+                    vertical_overlap = True if len(intersection) > 0 else False
+                    if vertical_overlap:
+                        # Eat up indices
+                        source_xs = source_xs - destination_xs
                         # Make sure edges exist only once, regardless on order of source and dest
                         if ((source.id, destination.id) not in existing_edges and
                                 (destination.id, source.id) not in existing_edges):
@@ -68,19 +80,19 @@ class SpreadSheetGraph(object):
                             edge_list.append(Edge(source, destination, list(intersection), AlignmentType.VERTICAL))
 
         # Horizontal Overlap
-        sorted_by_x = sorted(lr_list, key=lambda node: node.top)
+        sorted_by_x = sorted(lr_list, key=lambda node: node.left)
         for i, source in enumerate(sorted_by_x):
             source_ys = set(source.get_all_y())
             for j, destination in enumerate(sorted_by_x):
-                destination_bottom_of_source = i < j
-                if destination_bottom_of_source:
+                destination_right_of_source = i < j
+                if destination_right_of_source:
                     # Two different label regions, dest bottom of source
                     destination_ys = set(destination.get_all_y())
 
                     intersection = source_ys.intersection(destination_ys)
-                    vertical_overlap = True if len(intersection) > 0 else False
+                    horizontal_overlap = True if len(intersection) > 0 else False
                     source_ys = source_ys - destination_ys
-                    if vertical_overlap:
+                    if horizontal_overlap:
                         # Make sure edges exist only once, regardless on order of source and dest
                         if ((source.id, destination.id) not in existing_edges and
                                 (destination.id, source.id) not in existing_edges):

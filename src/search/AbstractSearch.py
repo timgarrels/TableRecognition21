@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Tuple
 
-from Rater import Rater
-from SpreadSheetGraph import SpreadSheetGraph
+from graph.SpreadSheetGraph import SpreadSheetGraph
+from rater.Rater import Rater
 
 
 class AbstractSearch(ABC):
@@ -15,7 +15,7 @@ class AbstractSearch(ABC):
         self.rater = rater
 
     @abstractmethod
-    def run(self):
+    def run(self) -> Tuple[List[bool], float]:
         pass
 
     def rate_edge_toggle_list(self, edge_toggle_list: List[bool]):

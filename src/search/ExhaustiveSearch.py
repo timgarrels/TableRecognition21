@@ -1,8 +1,8 @@
 """Implements genetic search on SpreadsheetGraphs"""
 import logging
 
-from AbstractSearch import AbstractSearch
-from Rater import Rater
+from rater.Rater import Rater
+from search.AbstractSearch import AbstractSearch
 
 logger = logging.getLogger(__name__)
 
