@@ -31,10 +31,10 @@ class Rater(object):
         for component in components:
             # TODO: implement
             logger.debug("Rating Mock!")
-            score = len(component.header_groups)
+            if component.heads:
+                score = component.header_top_row
+            else:
+                score = -100
             scores_per_component.append(score)
-            logger.debug(f"Component {[n.id for n in component.label_regions]} has the following header groups")
-            for hg in component.header_groups:
-                logger.debug(f"\t {[n.id for n in hg]}")
 
-        return sum(scores_per_component) + len(components)
+        return sum(scores_per_component)

@@ -25,6 +25,8 @@ class GraphComponentData(object):
         self._rows = None
         self._cols = None
         self._header_groups = None
+        self._header_top = None
+        self._header_top_row = None
 
     @property
     def bounding_box(self) -> BoundingBox:
@@ -87,6 +89,9 @@ class GraphComponentData(object):
     @property
     def header_groups(self):
         logger.debug(f"Searching header groups for component {sorted([n.id for n in self.label_regions])}")
+        if len(self.heads) == 0:
+            return []
+
         if self._header_groups is None:
             def belong_to_same_group(header1: LabelRegion, header2: LabelRegion):
                 edges = self.graph.node_edges_lookup[header1]
@@ -114,11 +119,14 @@ class GraphComponentData(object):
             # BFS
             grouped_lrs = []
             groups = []
+            header_top = [self.heads[0]]
+            header_top_lowest_row_index = self.heads[0].top
             for header in self.heads:
                 if header in grouped_lrs:
                     continue
                 logger.debug(f"Finding groups for {header.id}")
-                group = [header]
+                group: List[LabelRegion] = [header]
+                group_lowest_row = header.top
                 grouped_lrs.append(header)
                 neighbours = self.graph.get_neighbours(header)
 
@@ -136,6 +144,8 @@ class GraphComponentData(object):
                     if belongs_to_group(group, hn):
                         logger.debug(f"\t{hn.id} belongs to same group!")
                         group.append(hn)
+                        if hn.top < group_lowest_row:
+                            group_lowest_row = hn.top
                         neighbours = self.graph.get_neighbours(hn)
                         header_neighbours.extend([
                             n for n in neighbours if
@@ -144,9 +154,32 @@ class GraphComponentData(object):
                         logger.debug(f"\tIndirect neighbours:  {set(sorted([n.id for n in header_neighbours]))}")
                         grouped_lrs.append(hn)
                 groups.append(group)
-            self._header_groups = groups
+                if group_lowest_row <= header_top_lowest_row_index:
+                    header_top_lowest_row_index = group_lowest_row
+                    header_top = group
 
+            self._header_groups = groups
+            self._header_top = header_top
+            self._header_top_row = header_top_lowest_row_index
         return self._header_groups
+
+    @property
+    def header_top(self):
+        if len(self.heads) == 0:
+            return []
+        if self._header_top is None:
+            # Generation of header groups also initializes header top
+            _ = self.header_groups
+        return self._header_top
+
+    @property
+    def header_top_row(self):
+        if len(self.heads) == 0:
+            raise ValueError("There are no headers in this component, unable to calculate highest header group row")
+        if self._header_top_row is None:
+            # Generation of header groups also initializes header top row
+            _ = self.header_groups
+        return self._header_top_row
 
     @property
     def avg_waec(self):
