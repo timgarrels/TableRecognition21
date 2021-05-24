@@ -1,5 +1,6 @@
 """Class to represent a Graph Component, used to get attributes/data and cache them"""
 import logging
+from itertools import chain
 from typing import List
 
 from graph.SpreadSheetGraph import SpreadSheetGraph
@@ -197,11 +198,15 @@ class GraphComponentData(object):
     @property
     def c_ht(self):
         if self._c_ht is None:
-            self._c_ht = set([lr.get_all_x() for lr in self.header_top])
+            x_lists = [lr.get_all_x() for lr in self.header_top]
+            x_s = list(chain(*x_lists))
+            self._c_ht = set(x_s)
         return self._c_ht
 
     @property
     def c_d(self):
         if self._c_d is None:
-            self._c_d = set([lr.get_all_x() for lr in self.data])
+            x_lists = [lr.get_all_x() for lr in self.data]
+            x_s = list(chain(*x_lists))
+            self._c_d = set(x_s)
         return self._c_d

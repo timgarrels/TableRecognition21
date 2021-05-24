@@ -1,5 +1,6 @@
 """Class which implements Metrics and Weight Training for Partition Evaluation"""
 import logging
+from itertools import chain
 from typing import List
 
 from graph.GraphComponentData import GraphComponentData
@@ -41,6 +42,18 @@ class Rater(object):
         ):
             return 1
         return 0
+
+    def ovh(self, component: GraphComponentData):
+        ovh = []
+        for header_group in component.header_groups:
+            if header_group == component.header_top:
+                # We are looking for other valid header groups than header top
+                continue
+            x_lists = [lr.get_all_x() for lr in header_group]
+            x_s = set(list(chain(*x_lists)))
+            if len(x_s) >= 2:
+                ovh.append(header_group)
+        return len(ovh)
 
     def rate(self, graph: SpreadSheetGraph, edge_toggle_list: List[bool]) -> float:
         """Rates a graph based on a edge toggle list"""
