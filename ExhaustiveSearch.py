@@ -53,7 +53,7 @@ def test():
 
     fittest, fittest_rating = search.run()
     print("-----------\nResult:")
-    print(f"\tFittest: {ExhaustiveSearch.print_toggle_list(fittest)} (Rating: {fittest_rating})")
+    print(f"\tFittest: {ExhaustiveSearch.str_toggle_list(fittest)} (Rating: {fittest_rating})")
     print(f"\tTrue Count of Fittest: {sum(fittest)}")
 
 

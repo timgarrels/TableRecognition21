@@ -1,7 +1,11 @@
 """Class which implements Metrics and Weight Training for Partition Evaluation"""
+import logging
 from typing import List
 
 from SpreadSheetGraph import SpreadSheetGraph
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 # TODO: Implement metrics (how to access cell data? via graph?)
@@ -24,5 +28,8 @@ class Rater(object):
         component = new_graph.get_components()
 
         scores_per_component = []
+
+        # TODO: implement
+        logger.debug("Rating Mock!")
 
         return sum(scores_per_component)

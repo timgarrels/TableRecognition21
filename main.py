@@ -3,6 +3,7 @@ import sys
 from os.path import join
 
 from openpyxl import load_workbook
+from openpyxl.worksheet.worksheet import Worksheet
 
 from ExhaustiveSearch import ExhaustiveSearch
 from GeneticSearch import GeneticSearch
@@ -27,7 +28,7 @@ def main():
     logger.info("Creating Label Regions...")
     wb = load_workbook(SPREADSHEET_FILE)
     sheetname = wb.sheetnames[0]
-    sheet = wb[sheetname]
+    sheet: Worksheet = wb[sheetname]
     preprocessor = LabelRegionPreprocessor()
 
     label_regions = preprocessor.preproces_annotations(

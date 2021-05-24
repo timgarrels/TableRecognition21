@@ -2,10 +2,13 @@ import json
 import logging
 import ntpath
 import random
+from typing import List
 
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles.colors import Color
 from openpyxl.styles.fills import PatternFill
+
+from LabelRegion import LabelRegion
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +21,7 @@ def random_rgb_hex():
 class LabelRegionPreprocessor(object):
 
     @staticmethod
-    def visualize_lrs(lrs, out):
+    def visualize_lrs(lrs: List[LabelRegion], out):
         """Creates a colorful spreadsheet from the lr data"""
         logger.info("Visualizing Label Regions...")
         wb = Workbook()
@@ -26,12 +29,10 @@ class LabelRegionPreprocessor(object):
         for i, lr in enumerate(lrs):
             color = Color(rgb=random_rgb_hex())
             fill = PatternFill(patternType='solid', fgColor=color)
-            min_x, min_y = lr["top_left"]
-            max_x, max_y = lr["bottom_right"]
-            for x in range(min_x, max_x + 1):
-                for y in range(min_y, max_y + 1):
+            for x in range(lr.top, lr.bottom + 1):
+                for y in range(lr.left, lr.right + 1):
                     d = ws.cell(y, x)
-                    d.value = f"{i} - {lr['type']}"
+                    d.value = f"{i} - {lr.type}"
                     d.fill = fill
         wb.save(out)
 
@@ -125,7 +126,7 @@ class LabelRegionPreprocessor(object):
             column=cell["x"] + 1,
         ).value is None
 
-    def _merge_labled_cells_into_lrs(self, cell_rows):
+    def _merge_labled_cells_into_lrs(self, cell_rows) -> List[LabelRegion]:
         """Spreads cells to strictly rectangular regions
         Refer to https://upcommons.upc.edu/bitstream/handle/2117/128001/ROMERO%20Table%20recognition.pdf;jsessionid=F7D1099DA22A66950693F51EE0720A5C?sequence=1
         E. Koci, M. Thiele, W. Lehner and O. Romero, "Table Recognition in Spreadsheets via a Graph Representation," 2018 13th IAPR International Workshop on Document Analysis Systems (DAS), 2018, pp. 139-144, doi: 10.1109/DAS.2018.48.
@@ -202,16 +203,15 @@ class LabelRegionPreprocessor(object):
 
             y_values = list(map(lambda part: part["y"], lr_parts))
             # Annotations are 0-index, but openpyxl indexes like excel, starting at 1
-            top_left = start_x + 1, min(y_values) + 1
-            bottom_right = stop_x + 1, max(y_values) + 1
-            lrs.append({
-                "type": lr_type,
-                "top_left": top_left,
-                "bottom_right": bottom_right,
-            })
+            top = start_x + 1
+            left = min(y_values) + 1
+            bottom = stop_x + 1
+            right = max(y_values) + 1
+
+            lrs.append(LabelRegion(lr_id, lr_type, top, left, bottom, right))
         return lrs
 
-    def preproces_annotations(self, annotation_file, spreadsheet_file, sheet_name):
+    def preproces_annotations(self, annotation_file, spreadsheet_file, sheet_name) -> List[LabelRegion]:
         """Reads annotations and returns label regions, which coordinates start at one"""
         logger.debug("Reading Spreadsheet...")
         self._annotation_file = annotation_file

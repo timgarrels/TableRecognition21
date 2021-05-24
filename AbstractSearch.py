@@ -22,5 +22,5 @@ class AbstractSearch(ABC):
         return self.rater.rate(self.graph, edge_toggle_list)
 
     @staticmethod
-    def print_toggle_list(toggle_list):
+    def str_toggle_list(toggle_list):
         return ''.join([bin(x)[2] for x in toggle_list])
