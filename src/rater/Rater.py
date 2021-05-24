@@ -106,8 +106,38 @@ class Rater(object):
         return total_width / len(c_emt)
 
     def avg_waer(self, component: GraphComponentData):
-        # TODO: Implement
-        pass
+        y_lists = [lr.get_all_y() for lr in component.label_regions]
+        # All columns that are covered by at least on label region in our component
+        y_s = set(list(chain(*y_lists)))
+        # The Columns most left and most right in our component can not be empty
+        # otherwise the component would be smaller
+        # This means all columns in the components bounding box without x_s are all empty columns
+        empty_rows = set(component.bounding_box.get_all_y()) - y_s
+        # Group adj empty columns
+        r_emt = []
+        group = []
+        for row_index in sorted(empty_rows):
+            if len(group) == 0:
+                group = [row_index]
+                continue
+            if row_index - 1 != group[-1]:
+                # column not left adj of last col in current group
+                r_emt.append(group)
+                group = [row_index]
+
+            group.append(row_index)
+
+        if len(r_emt) == 0:
+            # Assumption: The metric lacks handling of missing empty rows, which would lead to division by zero
+            # We will return 0 (the best possible score) if there are no empty rows
+            return 0
+
+        # Groups not necessary for total height of empty columns
+        total_height = 0
+        for empty_row in empty_rows:
+            # TODO: This might die because empty row starts at 0, and has to be incremented by 1
+            total_height += component.graph.sheet.row_dimensions[empty_row].height
+        return total_height / len(r_emt)
 
     def rate(self, graph: SpreadSheetGraph, edge_toggle_list: List[bool]) -> float:
         """Rates a graph based on a edge toggle list"""
