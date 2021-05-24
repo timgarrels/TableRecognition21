@@ -27,6 +27,16 @@ class Rater(object):
             return 0
         return 1 - len(c_d.intersection(c_ht)) / len(c_ht)
 
+    def dp(self, component: GraphComponentData):
+        if len(component.heads) == 0 and len(component.data) >= 1:
+            return 1
+        return 0
+
+    def hp(self, component: GraphComponentData):
+        if len(component.data) == 0 and len(component.heads) >= 1:
+            return 1
+        return 0
+
     def rate(self, graph: SpreadSheetGraph, edge_toggle_list: List[bool]) -> float:
         """Rates a graph based on a edge toggle list"""
         # Create graph copy and let it represent the partition
