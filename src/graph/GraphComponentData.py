@@ -27,6 +27,8 @@ class GraphComponentData(object):
         self._header_groups = None
         self._header_top = None
         self._header_top_row = None
+        self._c_ht = None
+        self._c_d = None
 
     @property
     def bounding_box(self) -> BoundingBox:
@@ -191,3 +193,15 @@ class GraphComponentData(object):
         for col in self.graph.sheet.iter_cols(min_col=min_x, max_col=max_x, values_only=True):
             # TODO: Implement
             return 1
+
+    @property
+    def c_ht(self):
+        if self._c_ht is None:
+            self._c_ht = set([lr.get_all_x() for lr in self.header_top])
+        return self._c_ht
+
+    @property
+    def c_d(self):
+        if self._c_d is None:
+            self._c_d = set([lr.get_all_x() for lr in self.data])
+        return self._c_d

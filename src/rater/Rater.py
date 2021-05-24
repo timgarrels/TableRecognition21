@@ -14,18 +14,14 @@ logger.setLevel(logging.DEBUG)
 # TODO: Implement weight training
 class Rater(object):
     def ndar(self, component: GraphComponentData) -> float:
-        c_ht = set([lr.get_all_x() for lr in component.header_top])
-        c_d = set([lr.get_all_x() for lr in component.data])
-        if len(c_d) < 1 or len(c_ht) < 1:
+        if len(component.c_d) < 1 or len(component.c_ht) < 1:
             return 0
-        return 1 - len(c_d.intersection(c_ht)) / len(c_d)
+        return 1 - len(component.c_d.intersection(component.c_ht)) / len(component.c_d)
 
     def nhar(self, component: GraphComponentData) -> float:
-        c_ht = set([lr.get_all_x() for lr in component.header_top])
-        c_d = set([lr.get_all_x() for lr in component.data])
-        if len(c_d) < 1 or len(c_ht) < 1:
+        if len(component.c_d) < 1 or len(component.c_ht) < 1:
             return 0
-        return 1 - len(c_d.intersection(c_ht)) / len(c_ht)
+        return 1 - len(component.c_d.intersection(component.c_ht)) / len(component.c_ht)
 
     def dp(self, component: GraphComponentData):
         if len(component.heads) == 0 and len(component.data) >= 1:
