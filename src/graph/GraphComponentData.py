@@ -107,12 +107,19 @@ class GraphComponentData(object):
                         return False
                 return True
 
+            def belongs_to_group(group: List[LabelRegion], header: LabelRegion):
+                belongs = [belong_to_same_group(h, header) for h in group]
+                return any(belongs)
+
             # BFS
             grouped_lrs = []
             groups = []
             for header in self.heads:
+                if header in grouped_lrs:
+                    continue
                 logger.debug(f"Finding groups for {header.id}")
                 group = [header]
+                grouped_lrs.append(header)
                 neighbours = self.graph.get_neighbours(header)
 
                 logger.debug(f"Direct neighbours:  {sorted([n.id for n in neighbours])}")
@@ -121,11 +128,12 @@ class GraphComponentData(object):
                     n for n in neighbours if n.type == LabelRegionType.HEADER and n in self.label_regions
                 ]
                 logger.debug(f"Direct filtered neighbours:  {sorted([n.id for n in header_neighbours])}")
+
                 while len(header_neighbours) > 0:
                     hn = header_neighbours.pop(0)
                     if hn in grouped_lrs:
                         continue
-                    if belong_to_same_group(header, hn):
+                    if belongs_to_group(group, hn):
                         logger.debug(f"\t{hn.id} belongs to same group!")
                         group.append(hn)
                         neighbours = self.graph.get_neighbours(hn)
