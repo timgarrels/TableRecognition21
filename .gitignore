@@ -5,6 +5,8 @@ visualization.xlsx
 # Ignore IDE files
 .vscode
 .idea/
+# Ignore test file
+src/test.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
