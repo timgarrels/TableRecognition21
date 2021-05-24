@@ -33,6 +33,15 @@ class Rater(object):
             return 1
         return 0
 
+    def ioc(self, component: GraphComponentData):
+        if (
+                len(component.c_d) == 1 and
+                len(component.c_ht) == 1 and
+                len(component.c_d.intersection(component.c_ht)) == 1
+        ):
+            return 1
+        return 0
+
     def rate(self, graph: SpreadSheetGraph, edge_toggle_list: List[bool]) -> float:
         """Rates a graph based on a edge toggle list"""
         # Create graph copy and let it represent the partition
