@@ -166,12 +166,12 @@ class SpreadSheetGraph(object):
             component = [node]
             queue = adj_list[node]
             while queue:
-                node = queue.pop()
-                if node.id in visited:
+                connected_node = queue.pop()
+                if connected_node.id in visited:
                     continue
-                visited.append(node.id)
-                component.append(node)
-                queue.union(adj_list[node])
+                visited.append(connected_node.id)
+                component.append(connected_node)
+                queue = queue.union(adj_list[connected_node])
             components.append(component)
 
         return components
