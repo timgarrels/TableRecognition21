@@ -3,6 +3,8 @@ import logging
 from itertools import chain
 from typing import List
 
+from openpyxl.utils import get_column_letter
+
 from graph.GraphComponentData import GraphComponentData
 from graph.SpreadSheetGraph import SpreadSheetGraph
 from labelregions.BoundingBox import BoundingBox
@@ -67,6 +69,45 @@ class Rater(object):
         for data_lr in component.data:
             total_area += data_lr.area
         return total_area_above_top_header / total_area
+
+    def avg_waec(self, component: GraphComponentData):
+        x_lists = [lr.get_all_x() for lr in component.label_regions]
+        # All columns that are covered by at least on label region in our component
+        x_s = set(list(chain(*x_lists)))
+        # The Columns most left and most right in our component can not be empty
+        # otherwise the component would be smaller
+        # This means all columns in the components bounding box without x_s are all empty columns
+        empty_columns = set(component.bounding_box.get_all_x()) - x_s
+        # Group adj empty columns
+        c_emt = []
+        group = []
+        for col_index in sorted(empty_columns):
+            if len(group) == 0:
+                group = [col_index]
+                continue
+            if col_index - 1 != group[-1]:
+                # column not left adj of last col in current group
+                c_emt.append(group)
+                group = [col_index]
+
+            group.append(col_index)
+
+        if len(c_emt) == 0:
+            # Assumption: The metric lacks handling of missing empty columns, which would lead to division by zero
+            # We will return 0 (the best possible score) if there are no empty columns
+            return 0
+
+        # Groups not necessary for total width of empty columns
+        total_width = 0
+        for empty_column in empty_columns:
+            # TODO: This might die because empty column starts at 0, and has to be incremented by 1
+            total_width += component.graph.sheet.column_dimensions[get_column_letter(empty_column)].width
+
+        return total_width / len(c_emt)
+
+    def avg_waer(self, component: GraphComponentData):
+        # TODO: Implement
+        pass
 
     def rate(self, graph: SpreadSheetGraph, edge_toggle_list: List[bool]) -> float:
         """Rates a graph based on a edge toggle list"""

@@ -185,17 +185,6 @@ class GraphComponentData(object):
         return self._header_top_row
 
     @property
-    def avg_waec(self):
-        # Assumption: "adjacent empty columns" are just all empty columns in our partition
-        bounds = self.bounding_box
-        min_x = bounds.left
-        max_x = bounds.right
-        empty_cols = []
-        for col in self.graph.sheet.iter_cols(min_col=min_x, max_col=max_x, values_only=True):
-            # TODO: Implement
-            return 1
-
-    @property
     def c_ht(self):
         if self._c_ht is None:
             x_lists = [lr.get_all_x() for lr in self.header_top]
