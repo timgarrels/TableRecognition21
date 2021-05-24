@@ -136,7 +136,16 @@ class SpreadSheetGraph(object):
 
     def build_adj_list(self, edges: List[Edge]) -> Dict[LabelRegion, Set[LabelRegion]]:
         """Creates a adj list from the edge list and the edge toggle list"""
-        adj_list = {}.fromkeys(self.nodes, set())
+        adj_list = {}
+        # Dont use `.fromkeys(self.nodes, set())` here, as the set is then created only once and the same reference
+        # in all keys:
+        # d = {}.fromkeys([1,2], set()
+        # d[0].add(1)
+        # d
+        # > {0: {1}, 1: {1}}
+        for node in self.nodes:
+            adj_list[node] = set()
+
         for edge in edges:
             adj_list[edge.source].add(edge.destination)
             adj_list[edge.destination].add(edge.source)
