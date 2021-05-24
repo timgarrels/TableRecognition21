@@ -8,6 +8,10 @@ class BoundingBox(object):
         self.bottom: int = bottom
         self.right: int = right
 
+    @property
+    def area(self):
+        return (self.right - self.left) * (self.bottom - self.top)
+
     def intersect(self, box: BoundingBox):
         """Returns whether two bounding boxes intersect"""
         # TODO: Can be done smarter and more performant by top_left bottom_right comparison

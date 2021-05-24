@@ -5,6 +5,7 @@ from typing import List
 
 from graph.GraphComponentData import GraphComponentData
 from graph.SpreadSheetGraph import SpreadSheetGraph
+from labelregions.BoundingBox import BoundingBox
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,18 @@ class Rater(object):
             if len(x_s) >= 2:
                 ovh.append(header_group)
         return len(ovh)
+
+    def dahr(self, component: GraphComponentData):
+        # Data label regions that are to some degree above the header top row
+        data_above_top_header = [data_lr for data_lr in component.data if data_lr.top < component.header_top_row]
+        total_area_above_top_header = 0
+        for data_lr in data_above_top_header:
+            box_above_top_header = BoundingBox(data_lr.top, data_lr.left, component.header_top_row, data_lr.right)
+            total_area_above_top_header += box_above_top_header.area
+        total_area = 0
+        for data_lr in component.data:
+            total_area += data_lr.area
+        return total_area_above_top_header / total_area
 
     def rate(self, graph: SpreadSheetGraph, edge_toggle_list: List[bool]) -> float:
         """Rates a graph based on a edge toggle list"""
