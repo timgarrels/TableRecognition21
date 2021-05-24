@@ -13,11 +13,19 @@ logger.setLevel(logging.DEBUG)
 # TODO: Implement metrics (how to access cell data? via graph?)
 # TODO: Implement weight training
 class Rater(object):
-    def ndar(self, graph: SpreadSheetGraph) -> float:
-        pass
+    def ndar(self, component: GraphComponentData) -> float:
+        c_ht = set([lr.get_all_x() for lr in component.header_top])
+        c_d = set([lr.get_all_x() for lr in component.data])
+        if len(c_d) < 1 or len(c_ht) < 1:
+            return 0
+        return 1 - len(c_d.intersection(c_ht)) / len(c_d)
 
-    def nhar(self, graph: SpreadSheetGraph) -> float:
-        pass
+    def nhar(self, component: GraphComponentData) -> float:
+        c_ht = set([lr.get_all_x() for lr in component.header_top])
+        c_d = set([lr.get_all_x() for lr in component.data])
+        if len(c_d) < 1 or len(c_ht) < 1:
+            return 0
+        return 1 - len(c_d.intersection(c_ht)) / len(c_ht)
 
     def rate(self, graph: SpreadSheetGraph, edge_toggle_list: List[bool]) -> float:
         """Rates a graph based on a edge toggle list"""

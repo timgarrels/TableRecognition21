@@ -164,7 +164,7 @@ class GraphComponentData(object):
         return self._header_groups
 
     @property
-    def header_top(self):
+    def header_top(self) -> List[LabelRegion]:
         if len(self.heads) == 0:
             return []
         if self._header_top is None:
