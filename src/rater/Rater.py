@@ -139,6 +139,27 @@ class Rater(object):
             total_height += component.graph.sheet.row_dimensions[empty_row].height
         return total_height / len(r_emt)
 
+    def ovr(self, components: List[GraphComponentData]):
+        # Warning: This metric is really weird, as they use
+        # len(cols_of_all_lrs) * len(rows_of_all_lrs) of all divisor, which does not make sense to me
+        overlap = 0
+        cols_of_all_lrs = set()
+        rows_of_all_lrs = set()
+        for i in range(len(components)):
+            c_i = set(components[i].bounding_box.get_all_x())
+            cols_of_all_lrs = cols_of_all_lrs.union(c_i)
+            r_i = set(components[i].bounding_box.get_all_y())
+            rows_of_all_lrs = rows_of_all_lrs.union(r_i)
+            for j in range(len(components)):
+                if j <= i:
+                    continue
+                c_j = components[j].bounding_box.get_all_x()
+                r_j = components[j].bounding_box.get_all_y()
+
+                overlap += len(c_i.intersection(c_j)) * len(r_i.intersection(r_j))
+        return overlap / (len(cols_of_all_lrs) * len(rows_of_all_lrs))
+
+
     def rate(self, graph: SpreadSheetGraph, edge_toggle_list: List[bool]) -> float:
         """Rates a graph based on a edge toggle list"""
         # Create graph copy and let it represent the partition
