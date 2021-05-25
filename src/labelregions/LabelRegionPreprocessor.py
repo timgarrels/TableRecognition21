@@ -40,7 +40,8 @@ class LabelRegionPreprocessor(object):
 
         # Filter / rename specific labels
         # Drop MetaTitles
-        label_regions = [lr for lr in label_regions if lr["type"] != "MetaTitle"]
+        filtered_types = ["MetaTitle", "Notes", "Other"]
+        label_regions = [lr for lr in label_regions if lr["type"] not in filtered_types]
         # Set Derived = Data and GroupHead = Header
         for lr in label_regions:
             if lr["type"] == "Derived":
