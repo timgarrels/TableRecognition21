@@ -6,12 +6,16 @@ from os.path import join
 from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
+from graph.GraphComponentData import GraphComponentData
 from graph.SpreadSheetGraph import SpreadSheetGraph
 from labelregions.LabelRegionPreprocessor import LabelRegionPreprocessor
 from rater.Rater import Rater
 from search.ExhaustiveSearch import ExhaustiveSearch
 from search.GeneticSearch import GeneticSearch
 from search.GeneticSearchConfiguration import GeneticSearchConfiguration
+from visualization.GraphVisualization import visualize_graph
+from visualization.LabelRegionVisualization import visualize_lrs
+from visualization.TableDefinitionVisualization import visualize_table_definition
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
@@ -38,11 +42,13 @@ def main():
         SPREADSHEET_FILE,
         sheetname,
     )
-    LabelRegionPreprocessor.visualize_lrs(label_regions, out=join(VISUALIZATIONS_DIR, 'lrs.xlsx'))
+
+    visualize_lrs(label_regions, out=join(VISUALIZATIONS_DIR, 'lrs.xlsx'))
 
     sheet_graph = SpreadSheetGraph.from_label_regions_and_sheet(label_regions, sheet)
     logger.debug(f"Edge Count: {len(sheet_graph.edge_list)}")
-    sheet_graph.visualize(out=join(VISUALIZATIONS_DIR, 'original_graph'))
+
+    visualize_graph(sheet_graph, out=join(VISUALIZATIONS_DIR, 'original_graph'))
 
     if len(sheet_graph.nodes) <= 10:
         # Less than 11 nodes, do exhaustive search
@@ -55,16 +61,22 @@ def main():
             sheet_graph,
             # TODO: Rater should be trained
             Rater(),
-            GeneticSearchConfiguration(rand_mut_p=0.1, cross_mut_p=0.5, n_gen=200),
+            GeneticSearchConfiguration(),
         )
 
     fittest, fittest_rating = search.run()
+
     logger.debug(f"Best rating: {fittest_rating}")
     logger.debug(f"Best individual: {fittest}")
 
     logger.info("Visualizing Fittest Graph Partition...")
     sheet_graph.edge_toggle_list = fittest
-    sheet_graph.visualize(out=join(VISUALIZATIONS_DIR, 'fittest_graph'))
+
+    table_definitions = [GraphComponentData(component, sheet_graph).bounding_box for component in
+                         sheet_graph.get_components()]
+
+    visualize_graph(sheet_graph, out=join(VISUALIZATIONS_DIR, 'fittest_graph'))
+    visualize_table_definition(label_regions, table_definitions, out=join(VISUALIZATIONS_DIR, 'lrs.xlsx'))
 
 
 if __name__ == "__main__":

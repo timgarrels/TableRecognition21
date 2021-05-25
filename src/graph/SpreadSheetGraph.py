@@ -2,12 +2,10 @@
 import logging
 from typing import List, Dict, Set
 
-import graphviz
 from openpyxl.worksheet.worksheet import Worksheet
 
 from graph.Edge import Edge, AlignmentType
 from labelregions.LabelRegion import LabelRegion
-from labelregions.LabelRegionType import LabelRegionType
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -108,31 +106,6 @@ class SpreadSheetGraph(object):
     def disabled_edges(self):
         """Returns all disabled edges"""
         return [edge for i, edge in enumerate(self.edge_list) if self.edge_toggle_list[i] is False]
-
-    def visualize(self, output_format="png", engine="dot", out="out"):
-        """Uses graphviz to visualize the current graph"""
-        g = graphviz.Graph(format=output_format, engine=engine, strict=True)
-
-        # Add nodes for each component
-        components = self.get_components()
-        for i, component in enumerate(components):
-            p = graphviz.Graph(f"cluster{i}")
-            for label_region in component:
-                color = "blue" if label_region.type == LabelRegionType.HEADER else "green"
-                p.node(str(label_region.id), color=color)
-            g.subgraph(p)
-
-        # Add edges
-        for edge in self.enabled_edges():
-            color = "green"
-            style = "solid" if edge.alignment_type == AlignmentType.HORIZONTAL else "dashed"
-            g.edge(str(edge.source.id), str(edge.destination.id), style=style, color=color)
-        for edge in self.disabled_edges():
-            color = "red"
-            style = "solid" if edge.alignment_type == AlignmentType.HORIZONTAL else "dashed"
-            g.edge(str(edge.source.id), str(edge.destination.id), style=style, color=color)
-
-        g.render(out)
 
     def build_adj_list(self, edges: List[Edge]) -> Dict[LabelRegion, Set[LabelRegion]]:
         """Creates a adj list from the edge list and the edge toggle list"""

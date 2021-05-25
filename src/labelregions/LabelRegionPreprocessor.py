@@ -1,12 +1,9 @@
 import json
 import logging
 import ntpath
-import random
 from typing import List
 
-from openpyxl import load_workbook, Workbook
-from openpyxl.styles.colors import Color
-from openpyxl.styles.fills import PatternFill
+from openpyxl import load_workbook
 
 from labelregions.LabelRegion import LabelRegion
 from labelregions.LabelRegionType import LabelRegionType
@@ -14,31 +11,7 @@ from labelregions.LabelRegionType import LabelRegionType
 logger = logging.getLogger(__name__)
 
 
-def random_rgb_hex():
-    """Creates a random rgb string like 00FF00FF"""
-    return ''.join([hex(random.choice(range(16)))[2:] for _ in range(8)])
-
-
 class LabelRegionPreprocessor(object):
-
-    @staticmethod
-    def visualize_lrs(lrs: List[LabelRegion], out):
-        """Creates a colorful spreadsheet from the lr data"""
-        logger.info("Visualizing Label Regions...")
-        wb = Workbook()
-        ws = wb.create_sheet("Visualization")
-        for i, lr in enumerate(lrs):
-            color = Color(rgb=random_rgb_hex())
-            fill = PatternFill(patternType='solid', fgColor=color)
-            # Y is our row, X our column
-            for y in range(lr.top, lr.bottom + 1):
-                for x in range(lr.left, lr.right + 1):
-                    # Cell is referred by row, col
-                    d = ws.cell(y, x)
-                    d.value = f"{i} - {str(lr.type.value)}"
-                    d.fill = fill
-        wb.save(out)
-
     def __init__(self, remove_empty_cells=True):
         self.remove_empty_cells = remove_empty_cells
 
