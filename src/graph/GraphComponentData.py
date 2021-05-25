@@ -119,6 +119,10 @@ class GraphComponentData(object):
                 belongs = [belong_to_same_group(h, header) for h in group]
                 return any(belongs)
 
+            if len(self.heads) == 0:
+                # No headers in this component, no header groups, skip top header init
+                return []
+
             # BFS
             grouped_lrs = []
             groups = []
@@ -199,3 +203,6 @@ class GraphComponentData(object):
             x_s = list(chain(*x_lists))
             self._c_d = set(x_s)
         return self._c_d
+
+    def __str__(self):
+        return "Component(" + ",".join([str(lr) for lr in self.label_regions]) + ")"
