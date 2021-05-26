@@ -10,7 +10,7 @@ class BoundingBox(object):
 
     @property
     def area(self):
-        return (self.right - self.left) * (self.bottom - self.top)
+        return (self.right + 1 - self.left) * (self.bottom + 1 - self.top)
 
     def intersect(self, box: BoundingBox):
         """Returns whether two bounding boxes intersect"""

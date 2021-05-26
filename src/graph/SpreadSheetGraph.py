@@ -51,7 +51,6 @@ class SpreadSheetGraph(object):
         # WARNING: Based on the assumption, that each row index / col index can match only once
         # That means that three regions H1, D1, H2 that span the exact same cols and are directly on top of each other
         # That H1 is not connected to H2, because the edge H1-D1 already uses all col indices
-        # TODO: Implement Assumption that indices get eaten up
         logger.info("Creating Spreadsheet Graph...")
         existing_edges = []
         edge_list = []
