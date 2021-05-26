@@ -11,10 +11,10 @@ from labelregions.BoundingBox import BoundingBox
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.DEBUG)
+
+# logger.setLevel(logging.DEBUG)
 
 
-# TODO: Implement metrics (how to access cell data? via graph?)
 # TODO: Implement weight training
 class Rater(object):
     def ndar(self, component: GraphComponentData) -> float:

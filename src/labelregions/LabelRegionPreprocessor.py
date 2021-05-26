@@ -185,7 +185,8 @@ class LabelRegionPreprocessor(object):
             bottom = max(y_values) + 1
             right = stop_x + 1
 
-            lrs.append(LabelRegion(lr_id, LabelRegionType(lr_type), top, left, bottom, right))
+            # Create label region, add 1 to bottom right, as the refer to cells, and top left could be = bottom right
+            lrs.append(LabelRegion(lr_id, LabelRegionType(lr_type), top, left, bottom + 1, right + 1))
         return lrs
 
     def preproces_annotations(self, annotation_file, spreadsheet_file, sheet_name) -> List[LabelRegion]:
