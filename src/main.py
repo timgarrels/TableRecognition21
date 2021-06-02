@@ -1,3 +1,4 @@
+import json
 import logging
 import sys
 from os import getcwd, makedirs
@@ -35,6 +36,10 @@ def process_sheetdata(sheetdata: SheetData, output_dir: str):
         rmtree(sheet_output_dir)
     makedirs(sheet_output_dir, exist_ok=True)
 
+    logger.info(f"Exporting ground truth table definition")
+    with open(join(sheet_output_dir, "ground_truth_table_definition.json"), "w", encoding="utf-8") as f:
+        json.dump(sheetdata.table_definition_dict(), f, ensure_ascii=False, indent=4)
+
     logger.info(f"Visualizing sheet {sheetdata}")
     visualize_sheet_data(sheetdata, join(sheet_output_dir, "visualization_in.xlsx"))
 
@@ -69,6 +74,10 @@ def process_sheetdata(sheetdata: SheetData, output_dir: str):
                          sheet_graph.get_components()]
 
     sheetdata.table_definitions = table_definitions
+    logger.info(f"Exporting fittest table definition")
+    with open(join(sheet_output_dir, "fittest_table_definition.json"), "w", encoding="utf-8") as f:
+        json.dump(sheetdata.table_definition_dict(), f, ensure_ascii=False, indent=4)
+
     visualize_graph(sheet_graph, out=join(sheet_output_dir, 'fittest_graph'))
     visualize_sheet_data(sheetdata, join(sheet_output_dir, "visualization_out.xlsx"))
 
