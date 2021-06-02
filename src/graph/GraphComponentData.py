@@ -206,3 +206,15 @@ class GraphComponentData(object):
 
     def __str__(self):
         return "Component(" + ",".join([str(lr) for lr in self.label_regions]) + ")"
+
+    def id(self):
+        """An id that can be used to cache scores of a rater for this component
+        The components rating is not dependent on the self.graph property
+        it's only used for lookups, which are then filtered on the label region property
+        therefore the sorted ids of the label regions suffice as caching id"""
+
+        # Have to sort the ids as int's first
+        sorted_ids = sorted([lr.id for lr in self.label_regions])
+        str_ids = [str(int_id) for int_id in sorted_ids]
+
+        return f"Component({','.join(str_ids)})"

@@ -1,7 +1,7 @@
 """Class which implements Metrics and Weight Training for Partition Evaluation"""
 import logging
 from itertools import chain
-from typing import List, Callable
+from typing import List, Callable, Dict
 
 from openpyxl.utils import get_column_letter
 
@@ -17,6 +17,9 @@ logger = logging.getLogger(__name__)
 
 # TODO: Implement weight training
 class Rater(object):
+    def __init__(self):
+        self._score_cache: Dict[str, float] = {}
+
     def ndar(self, component: GraphComponentData) -> float:
         if len(component.c_d) < 1 or len(component.c_ht) < 1:
             return 0
@@ -201,11 +204,13 @@ class Rater(object):
 
         scores_per_component = []
         for component in components:
-            score = 0
-            for metric in component_based_metrics:
-                metric_name = metric.__name__
-                logger.debug(f"Calculating {metric_name} for {component}")
-                score += metric(component)
-            scores_per_component.append(score)
+            if self._score_cache.get(component.id(), None) is None:
+                score = 0
+                for metric in component_based_metrics:
+                    metric_name = metric.__name__
+                    logger.debug(f"Calculating {metric_name} for {component}")
+                    score += metric(component)
+                self._score_cache[component.id()] = score
+            scores_per_component.append(self._score_cache[component.id()])
 
         return sum(scores_per_component) + self.ovr(components)
