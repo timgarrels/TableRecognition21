@@ -7,6 +7,9 @@ visualization.xlsx
 .idea/
 # Ignore test file
 src/test.py
+# Ignore data zip
+Deco.zip
+FusTe.zip
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

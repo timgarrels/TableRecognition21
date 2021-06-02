@@ -1,18 +1,12 @@
 from typing import List
 
-from openpyxl import load_workbook
 from openpyxl.styles import Border, Side
 
 from labelregions.BoundingBox import BoundingBox
-from labelregions.LabelRegion import LabelRegion
-from visualization.LabelRegionVisualization import visualize_lrs
 
 
-def visualize_table_definition(lrs: List[LabelRegion], tfs: List[BoundingBox], out):
-    # Create label region visualization to overlay
-    visualize_lrs(lrs, out, sheet_name="Table Definition Visualization")
-    wb = load_workbook(out)
-    ws = wb["Table Definition Visualization"]
+def add_table_definition_visualization(tfs: List[BoundingBox], wb, sheet_name="Table Definition Visualization"):
+    ws = wb[sheet_name]
     for tf in tfs:
         # Visualize each table by adding cell borders (no bulk cell border in openpyxl)
         top_cells = [(x, tf.top) for x in range(tf.left, tf.right + 1)]
@@ -47,4 +41,3 @@ def visualize_table_definition(lrs: List[LabelRegion], tfs: List[BoundingBox], o
                                                     left=Side(border_style=border_style, color=border_color))
         ws.cell(tf.bottom, tf.right).border = Border(bottom=Side(border_style=border_style, color=border_color),
                                                      right=Side(border_style=border_style, color=border_color))
-    wb.save(out)

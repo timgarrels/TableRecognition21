@@ -10,6 +10,7 @@ from search.AbstractSearch import AbstractSearch
 from search.GeneticSearchConfiguration import GeneticSearchConfiguration
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class GeneticSearch(AbstractSearch):

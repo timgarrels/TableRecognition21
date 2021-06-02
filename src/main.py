@@ -1,54 +1,47 @@
 import logging
 import sys
-from os import getcwd
-from os.path import join
-
-from openpyxl import load_workbook
-from openpyxl.worksheet.worksheet import Worksheet
+from os import getcwd, makedirs
+from os.path import join, split, exists
+from shutil import rmtree
 
 from graph.GraphComponentData import GraphComponentData
 from graph.SpreadSheetGraph import SpreadSheetGraph
-from labelregions.LabelRegionPreprocessor import LabelRegionPreprocessor
+from labelregions.AnnotationPreprocessor import AnnotationPreprocessor
+from loader.Dataset import Dataset
+from loader.SheetData import SheetData
 from rater.Rater import Rater
 from search.ExhaustiveSearch import ExhaustiveSearch
 from search.GeneticSearch import GeneticSearch
 from search.GeneticSearchConfiguration import GeneticSearchConfiguration
 from visualization.GraphVisualization import visualize_graph
-from visualization.LabelRegionVisualization import visualize_lrs
-from visualization.TableDefinitionVisualization import visualize_table_definition
+from visualization.SheetDataVisualization import visualize_sheet_data
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 DATA_DIR = join(getcwd(), "data")
-VISUALIZATIONS_DIR = join(getcwd(), "visualizations")
-ANNOTATIONS = "annotations_elements.json"
-SPREADSHEET = "andrea_ring__3__HHmonthlyavg.xlsx"
-ANNOTATION_FILE = join(DATA_DIR, ANNOTATIONS)
-SPREADSHEET_FILE = join(DATA_DIR, SPREADSHEET)
+OUTPUT_DIR = join(getcwd(), "output")
 
 
-def main():
-    logger.info("Creating Label Regions...")
-    wb = load_workbook(SPREADSHEET_FILE)
-    sheetname = wb.sheetnames[0]
-    sheet: Worksheet = wb[sheetname]
-    preprocessor = LabelRegionPreprocessor()
-
-    label_regions = preprocessor.preproces_annotations(
-        ANNOTATION_FILE,
-        SPREADSHEET_FILE,
-        sheetname,
+def process_sheetdata(sheetdata: SheetData, output_dir: str):
+    sheet_output_dir = join(
+        output_dir,
+        split(sheetdata.parent_path)[1],
+        sheetdata.worksheet.title,
     )
+    if exists(sheet_output_dir):
+        rmtree(sheet_output_dir)
+    makedirs(sheet_output_dir, exist_ok=True)
 
-    visualize_lrs(label_regions, out=join(VISUALIZATIONS_DIR, 'lrs.xlsx'))
+    logger.info(f"Visualizing sheet {sheetdata}")
+    visualize_sheet_data(sheetdata, join(sheet_output_dir, "visualization_in.xlsx"))
 
-    sheet_graph = SpreadSheetGraph.from_label_regions_and_sheet(label_regions, sheet)
+    sheet_graph = SpreadSheetGraph.from_label_regions_and_sheet(sheetdata.label_regions, sheetdata.worksheet)
     logger.debug(f"Edge Count: {len(sheet_graph.edge_list)}")
 
-    visualize_graph(sheet_graph, out=join(VISUALIZATIONS_DIR, 'original_graph'))
+    visualize_graph(sheet_graph, out=join(sheet_output_dir, 'original_graph'))
 
     if len(sheet_graph.nodes) <= 10:
         # Less than 11 nodes, do exhaustive search
@@ -75,8 +68,34 @@ def main():
     table_definitions = [GraphComponentData(component, sheet_graph).bounding_box for component in
                          sheet_graph.get_components()]
 
-    visualize_graph(sheet_graph, out=join(VISUALIZATIONS_DIR, 'fittest_graph'))
-    visualize_table_definition(label_regions, table_definitions, out=join(VISUALIZATIONS_DIR, 'lrs.xlsx'))
+    sheetdata.table_definitions = table_definitions
+    visualize_graph(sheet_graph, out=join(sheet_output_dir, 'fittest_graph'))
+    visualize_sheet_data(sheetdata, join(sheet_output_dir, "visualization_out.xlsx"))
+
+
+def process_dataset(dataset: Dataset, limit=None):
+    """Runs the algorithm on the DECO dataset and processes
+    only :limit sheets before returning"""
+    processed_sheets = 0
+    for sheetdata in dataset.get_sheet_data():
+        if limit is not None and processed_sheets >= limit:
+            break
+        process_sheetdata(sheetdata, join(OUTPUT_DIR, dataset.name))
+        processed_sheets += 1
+
+
+def main():
+    preprocessor = AnnotationPreprocessor()
+    DECO = Dataset(join(DATA_DIR, "Deco"), "Deco", preprocessor)
+    FUSTE = Dataset(join(DATA_DIR, "FusTe"), "FusTe", preprocessor)
+
+    # Takes forever, because there are 334 nodes in this. Keep for later timing debug purposes
+    # sheetdata = FUSTE.get_specific_sheetdata("fde8668c-7bc1-4da6-a2b3-833b14453f5f.xlsx", "Sheet1")
+
+    sheetdata = DECO.get_specific_sheetdata("andrea_ring__3__HHmonthlyavg.xlsx", "Monthly HH Flows")
+    process_sheetdata(sheetdata, join(OUTPUT_DIR, DECO.name))
+    # for dataset in [DECO, FUSTE]:
+    #     process_dataset(dataset, 1)
 
 
 if __name__ == "__main__":

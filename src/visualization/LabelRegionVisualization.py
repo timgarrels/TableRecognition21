@@ -15,11 +15,9 @@ def random_rgb_hex():
     return ''.join([hex(random.choice(range(16)))[2:] for _ in range(8)])
 
 
-def visualize_lrs(lrs: List[LabelRegion], out, sheet_name="Label Region Visualization"):
+def add_lr_visualization(lrs: List[LabelRegion], workbook: Workbook, sheet_name="Label Region Visualization"):
     """Creates a colorful spreadsheet from the lr data"""
-    logger.info("Visualizing Label Regions...")
-    wb = Workbook()
-    ws = wb.create_sheet(sheet_name)
+    ws = workbook.create_sheet(sheet_name)
     for i, lr in enumerate(lrs):
         color = Color(rgb=random_rgb_hex())
         fill = PatternFill(patternType='solid', fgColor=color)
@@ -30,4 +28,3 @@ def visualize_lrs(lrs: List[LabelRegion], out, sheet_name="Label Region Visualiz
                 d = ws.cell(y, x)
                 d.value = f"{i} - {str(lr.type.value)}"
                 d.fill = fill
-    wb.save(out)
