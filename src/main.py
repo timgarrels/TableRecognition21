@@ -5,9 +5,9 @@ from os import getcwd, makedirs
 from os.path import join, split, exists
 from shutil import rmtree
 
-from graph.GraphComponentData import GraphComponentData
 from graph.SpreadSheetGraph import SpreadSheetGraph
 from labelregions.AnnotationPreprocessor import AnnotationPreprocessor
+from labelregions.BoundingBox import BoundingBox
 from loader.Dataset import Dataset
 from loader.SheetData import SheetData
 from rater.Rater import Rater
@@ -43,9 +43,13 @@ def process_sheetdata(sheetdata: SheetData, output_dir: str):
     logger.info(f"Visualizing sheet {sheetdata}")
     visualize_sheet_data(sheetdata, join(sheet_output_dir, "visualization_in.xlsx"))
 
-    sheet_graph = SpreadSheetGraph.from_label_regions_and_sheet(sheetdata.label_regions, sheetdata.worksheet)
+    sheet_graph = SpreadSheetGraph(sheetdata)
+
     logger.debug(f"Edge Count: {len(sheet_graph.edge_list)}")
 
+    visualize_graph(sheet_graph, out=join(sheet_output_dir, 'ground_truth_graph'))
+    # Reset edge toggle list to remove ground truth from graph
+    sheet_graph.enable_all_edges()
     visualize_graph(sheet_graph, out=join(sheet_output_dir, 'original_graph'))
 
     if len(sheet_graph.nodes) <= 10:
@@ -70,7 +74,7 @@ def process_sheetdata(sheetdata: SheetData, output_dir: str):
     logger.info("Visualizing Fittest Graph Partition...")
     sheet_graph.edge_toggle_list = fittest
 
-    table_definitions = [GraphComponentData(component, sheet_graph).bounding_box for component in
+    table_definitions = [BoundingBox.merge(component) for component in
                          sheet_graph.get_components()]
 
     sheetdata.table_definitions = table_definitions

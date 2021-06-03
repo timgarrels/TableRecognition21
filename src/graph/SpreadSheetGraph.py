@@ -5,20 +5,22 @@ from typing import List, Dict, Set
 from openpyxl.worksheet.worksheet import Worksheet
 
 from graph.Edge import Edge, AlignmentType
+from labelregions.BoundingBox import BoundingBox
 from labelregions.LabelRegion import LabelRegion
+from loader.SheetData import SheetData
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
 class SpreadSheetGraph(object):
-    def __init__(self, nodes: List[LabelRegion], edge_list: List[Edge], sheet: Worksheet):
-        self.nodes: List[LabelRegion] = nodes
+    def __init__(self, sheetdata: SheetData):
+        self.nodes: List[LabelRegion] = sheetdata.label_regions
         self.node_id_lookup: Dict[int, LabelRegion] = dict([(node.id, node) for node in self.nodes])
-        self.edge_list: List[Edge] = edge_list
-        self.sheet: Worksheet = sheet
+        self.edge_list: List[Edge] = self.get_generate_edge_list()
+        self.sheet: Worksheet = sheetdata.worksheet
 
-        self.edge_toggle_list: List[bool] = [True for _ in range(len(self.edge_list))]
+        self.edge_toggle_list: List[bool] = self.edge_toggle_list_from_table_definition(sheetdata.table_definitions)
 
         self.node_edges_lookup: Dict[LabelRegion, Set[Edge]] = {}
         for node in self.nodes:
@@ -34,6 +36,9 @@ class SpreadSheetGraph(object):
             self.node_edges_lookup[edge.source].add(edge)
             self.node_edges_lookup[edge.destination].add(edge)
 
+    def enable_all_edges(self):
+        self.edge_toggle_list = [True for _ in range(len(self.edge_toggle_list))]
+
     def get_neighbours(self, node) -> List[LabelRegion]:
         edges = self.node_edges_lookup[node]
 
@@ -43,8 +48,7 @@ class SpreadSheetGraph(object):
         nodes = set([get_partner_from_edge(edge) for edge in edges])
         return list(nodes)
 
-    @staticmethod
-    def from_label_regions_and_sheet(lr_list: List[LabelRegion], sheet: Worksheet):
+    def get_generate_edge_list(self):
         """Creates a graph from label regions
         Refer to `A Genetic-based Search for Adaptive TableRecognition in Spreadsheets.pdf`
         for the approach"""
@@ -56,7 +60,7 @@ class SpreadSheetGraph(object):
         edge_list = []
 
         # Vertical Overlap
-        sorted_by_y = sorted(lr_list, key=lambda node: node.top)
+        sorted_by_y = sorted(self.nodes, key=lambda node: node.top)
         for i, source in enumerate(sorted_by_y):
             source_xs = set(source.get_all_x())
             for j, destination in enumerate(sorted_by_y):
@@ -77,7 +81,7 @@ class SpreadSheetGraph(object):
                             edge_list.append(Edge(source, destination, list(intersection), AlignmentType.VERTICAL))
 
         # Horizontal Overlap
-        sorted_by_x = sorted(lr_list, key=lambda node: node.left)
+        sorted_by_x = sorted(self.nodes, key=lambda node: node.left)
         for i, source in enumerate(sorted_by_x):
             source_ys = set(source.get_all_y())
             for j, destination in enumerate(sorted_by_x):
@@ -96,7 +100,30 @@ class SpreadSheetGraph(object):
                             existing_edges.extend([(source.id, destination.id), (destination.id, source.id)])
                             edge_list.append(Edge(source, destination, list(intersection), AlignmentType.HORIZONTAL))
 
-        return SpreadSheetGraph(lr_list, edge_list, sheet)
+        return edge_list
+
+    def edge_toggle_list_from_table_definition(self, tds: List[BoundingBox]):
+        """Matches the edge toggle list to the table definitions
+        Assumption: There can be multiple valid graph representations of the same table definition
+        In a three node component (a table definition with three label regions) there can be either 2 or 3 edges
+        and the 2 edges can be at any place. It still is a valid component.
+        We create a graph representation, where each component only contains enabled edges."""
+
+        # Group Label Regions into should-be-components
+        # label_region -> component_id
+        components = {}
+        for i, td in enumerate(tds):
+            for lr in self.nodes:
+                if lr.intersect(td):
+                    components[lr] = i
+
+        edge_toggle_list: List[bool] = [True for _ in range(len(self.edge_list))]
+        # Find and disable all edges that connect components
+        for edge_index, edge in enumerate(self.edge_list):
+            if components[edge.source] != components[edge.destination]:
+                # Edge nodes are in different components, edge should be disabled
+                edge_toggle_list[edge_index] = False
+        return edge_toggle_list
 
     def enabled_edges(self):
         """Returns all enabled edges"""

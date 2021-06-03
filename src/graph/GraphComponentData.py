@@ -35,16 +35,7 @@ class GraphComponentData(object):
     def bounding_box(self) -> BoundingBox:
         """Returns the minimum bounding box of this component"""
         if self._bounding_box is None:
-            tops = [label_region.top for label_region in self.label_regions]
-            lefts = [label_region.left for label_region in self.label_regions]
-            bottoms = [label_region.bottom for label_region in self.label_regions]
-            rights = [label_region.right for label_region in self.label_regions]
-
-            min_x = min(tops)
-            min_y = min(lefts)
-            max_x = max(bottoms)
-            max_y = max(rights)
-            self._bounding_box = BoundingBox(min_x, min_y, max_x, max_y)
+            self._bounding_box = BoundingBox.merge(self.label_regions)
         return self._bounding_box
 
     @property

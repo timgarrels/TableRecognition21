@@ -1,5 +1,7 @@
 from __future__ import annotations  # Necessary so class can refer to its own type in itself
 
+from typing import List
+
 
 class BoundingBox(object):
     def __init__(self, top: int, left: int, bottom: int, right: int):
@@ -26,3 +28,17 @@ class BoundingBox(object):
 
     def get_all_y(self):
         return [y for y in range(self.top, self.bottom + 1)]
+
+    @staticmethod
+    def merge(bounding_boxes: List[BoundingBox]):
+        """Creates the minimal bounding box containing all bounding boxes"""
+        tops = [bb.top for bb in bounding_boxes]
+        lefts = [bb.left for bb in bounding_boxes]
+        bottoms = [bb.bottom for bb in bounding_boxes]
+        rights = [bb.right for bb in bounding_boxes]
+
+        min_x = min(tops)
+        min_y = min(lefts)
+        max_x = max(bottoms)
+        max_y = max(rights)
+        return BoundingBox(min_x, min_y, max_x, max_y)
