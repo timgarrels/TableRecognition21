@@ -7,7 +7,6 @@ from shutil import rmtree
 
 from graph.SpreadSheetGraph import SpreadSheetGraph
 from labelregions.AnnotationPreprocessor import AnnotationPreprocessor
-from labelregions.BoundingBox import BoundingBox
 from loader.Dataset import Dataset
 from loader.SheetData import SheetData
 from rater.Rater import Rater
@@ -36,21 +35,22 @@ def process_sheetdata(sheetdata: SheetData, output_dir: str):
         rmtree(sheet_output_dir)
     makedirs(sheet_output_dir, exist_ok=True)
 
-    logger.info(f"Exporting ground truth table definition")
-    with open(join(sheet_output_dir, "ground_truth_table_definition.json"), "w", encoding="utf-8") as f:
-        json.dump(sheetdata.table_definition_dict(), f, ensure_ascii=False, indent=4)
-
-    logger.info(f"Visualizing sheet {sheetdata}")
+    logger.info(f"Visualizing Ground Truth Label Regions and Table Definition of sheet '{sheetdata}'")
     visualize_sheet_data(sheetdata, join(sheet_output_dir, "visualization_in.xlsx"))
 
     sheet_graph = SpreadSheetGraph(sheetdata)
 
-    logger.debug(f"Edge Count: {len(sheet_graph.edge_list)}")
+    logger.info(f"Exporting ground truth table definition")
+    with open(join(sheet_output_dir, "ground_truth_table_definition.json"), "w", encoding="utf-8") as f:
+        json.dump(sheet_graph.table_definition_dict(), f, ensure_ascii=False, indent=4)
 
+    logger.info(f"Visualizing ground truth graph")
     visualize_graph(sheet_graph, out=join(sheet_output_dir, 'ground_truth_graph'))
+
+    logger.info(f"Visualizing input graph")
     # Reset edge toggle list to remove ground truth from graph
     sheet_graph.enable_all_edges()
-    visualize_graph(sheet_graph, out=join(sheet_output_dir, 'original_graph'))
+    visualize_graph(sheet_graph, out=join(sheet_output_dir, 'input_graph'))
 
     if len(sheet_graph.nodes) <= 10:
         # Less than 11 nodes, do exhaustive search
@@ -68,16 +68,14 @@ def process_sheetdata(sheetdata: SheetData, output_dir: str):
 
     sheet_graph = search.run()
 
-    logger.info("Visualizing Fittest Graph Partition...")
+    logger.info("Visualizing Fittest Graph")
     visualize_graph(sheet_graph, out=join(sheet_output_dir, 'fittest_graph'))
 
     logger.info(f"Exporting fittest table definition")
-    table_definitions = [BoundingBox.merge(component) for component in
-                         sheet_graph.get_components()]
-    sheetdata.table_definitions = table_definitions
     with open(join(sheet_output_dir, "fittest_table_definition.json"), "w", encoding="utf-8") as f:
-        json.dump(sheetdata.table_definition_dict(), f, ensure_ascii=False, indent=4)
+        json.dump(sheet_graph.table_definition_dict(), f, ensure_ascii=False, indent=4)
 
+    logger.info(f"Visualizing Computed Label Regions and Table Definition of sheet '{sheetdata}'")
     visualize_sheet_data(sheetdata, join(sheet_output_dir, "visualization_out.xlsx"))
 
 

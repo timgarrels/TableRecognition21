@@ -174,3 +174,16 @@ class SpreadSheetGraph(object):
             components.append(component)
 
         return components
+
+    def get_table_definitions(self):
+        return [BoundingBox.merge(component) for component in self.get_components()]
+
+    def table_definition_dict(self):
+        """Exports the table definition bounding boxes"""
+        bounding_box_definitions = [{
+            "top": bb.top,
+            "left": bb.left,
+            "bottom": bb.bottom,
+            "right": bb.left,
+        } for bb in self.get_table_definitions()]
+        return sorted(bounding_box_definitions, key=lambda d: (d["top"], d["left"], d["bottom"], d["right"]))

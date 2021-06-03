@@ -1,5 +1,5 @@
 import logging
-import random
+from hashlib import md5
 from typing import List
 
 from openpyxl import Workbook
@@ -10,16 +10,18 @@ from labelregions.LabelRegion import LabelRegion
 logger = logging.getLogger(__name__)
 
 
-def random_rgb_hex():
-    """Creates a random rgb string like 00FF00FF"""
-    return ''.join([hex(random.choice(range(16)))[2:] for _ in range(8)])
+def color_from_int(i: int) -> str:
+    """Maps an integer to a color"""
+    h = md5()
+    h.update(str(i).encode())
+    return h.hexdigest()[:8]
 
 
 def add_lr_visualization(lrs: List[LabelRegion], workbook: Workbook, sheet_name="Label Region Visualization"):
     """Creates a colorful spreadsheet from the lr data"""
     ws = workbook.create_sheet(sheet_name)
     for i, lr in enumerate(lrs):
-        color = Color(rgb=random_rgb_hex())
+        color = Color(rgb=color_from_int(i))
         fill = PatternFill(patternType='solid', fgColor=color)
         # Y is our row, X our column
         for y in range(lr.top, lr.bottom + 1):

@@ -17,15 +17,5 @@ class SheetData(object):
     def parent_path(self):
         return self.worksheet.parent.path
 
-    def table_definition_dict(self):
-        """Exports the table definition bounding boxes"""
-        bounding_box_definitions = [{
-            "top": bb.top,
-            "left": bb.left,
-            "bottom": bb.bottom,
-            "right": bb.left,
-        } for bb in self.table_definitions]
-        return sorted(bounding_box_definitions, key=lambda d: (d["top"], d["left"], d["bottom"], d["right"]))
-
     def __str__(self):
         return f"Sheetdata({self.worksheet.title} of {self.parent_path}"
