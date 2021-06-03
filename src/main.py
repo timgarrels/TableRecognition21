@@ -66,23 +66,18 @@ def process_sheetdata(sheetdata: SheetData, output_dir: str):
             GeneticSearchConfiguration(),
         )
 
-    fittest, fittest_rating = search.run()
-
-    logger.debug(f"Best rating: {fittest_rating}")
-    logger.debug(f"Best individual: {fittest}")
+    sheet_graph = search.run()
 
     logger.info("Visualizing Fittest Graph Partition...")
-    sheet_graph.edge_toggle_list = fittest
+    visualize_graph(sheet_graph, out=join(sheet_output_dir, 'fittest_graph'))
 
+    logger.info(f"Exporting fittest table definition")
     table_definitions = [BoundingBox.merge(component) for component in
                          sheet_graph.get_components()]
-
     sheetdata.table_definitions = table_definitions
-    logger.info(f"Exporting fittest table definition")
     with open(join(sheet_output_dir, "fittest_table_definition.json"), "w", encoding="utf-8") as f:
         json.dump(sheetdata.table_definition_dict(), f, ensure_ascii=False, indent=4)
 
-    visualize_graph(sheet_graph, out=join(sheet_output_dir, 'fittest_graph'))
     visualize_sheet_data(sheetdata, join(sheet_output_dir, "visualization_out.xlsx"))
 
 

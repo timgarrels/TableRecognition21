@@ -27,7 +27,10 @@ class ExhaustiveSearch(AbstractSearch):
                 fittest_rating = rating
                 fittest_partition = toggle_list
 
-        return fittest_partition, fittest_rating
+        logger.info(f"Best rating: {fittest_rating}")
+        logger.info(f"Best individual: {fittest_partition}")
+        self.graph.edge_toggle_list = fittest_partition
+        return self.graph
 
 
 def test():

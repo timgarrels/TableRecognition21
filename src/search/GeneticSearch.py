@@ -2,7 +2,7 @@
 import logging
 import math
 import random
-from typing import List, Dict, Tuple
+from typing import List, Dict
 
 from graph.SpreadSheetGraph import SpreadSheetGraph
 from rater.Rater import Rater
@@ -31,7 +31,7 @@ class GeneticSearch(AbstractSearch):
             raise NotImplementedError("Seed is not implemented!")
         return [random.choice([True, False]) for _ in range(len(self.graph.edge_list))]
 
-    def run(self) -> Tuple[List[bool], float]:
+    def run(self) -> SpreadSheetGraph:
         logger.info("Running Genetic Search...")
         logger.info("Creating initial population...")
         n_pop = math.ceil(math.log10(len(self.graph.edge_list)) * 100)
@@ -71,7 +71,10 @@ class GeneticSearch(AbstractSearch):
             pop, ratings = self.select_fittest(pop, ratings, children, children_ratings, n_survivors,
                                                self.configuration.rooster_size)
 
-        return hof_individual, hof_rating
+        logger.info(f"Best rating: {hof_rating}")
+        logger.info(f"Best individual: {hof_individual}")
+        self.graph.edge_toggle_list = hof_individual
+        return self.graph
 
     def child_from_population(self, population: List[List[bool]]) -> List[bool]:
         """Generate a child toggle list for the next generation
