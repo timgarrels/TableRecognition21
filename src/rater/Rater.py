@@ -17,8 +17,20 @@ logger = logging.getLogger(__name__)
 
 # TODO: Implement weight training
 class Rater(object):
-    def __init__(self):
+    def __init__(self, weights: List[float]):
         self._score_cache: Dict[str, float] = {}
+        self.component_based_metrics: List[Callable[[GraphComponentData], float]] = [
+            self.ndar,
+            self.nhar,
+            self.dp,
+            self.hp,
+            self.ioc,
+            self.ovh,
+            self.dahr,
+            self.avg_waec,
+            self.avg_waer,
+        ]
+        self.weights = weights
 
     def ndar(self, component: GraphComponentData) -> float:
         if len(component.c_d) < 1 or len(component.c_ht) < 1:
@@ -192,25 +204,17 @@ class Rater(object):
         new_graph.edge_toggle_list = edge_toggle_list
         components = [GraphComponentData(c, graph) for c in graph.get_components()]
 
-        component_based_metrics: List[Callable[[GraphComponentData], float]] = [
-            self.dp,
-            self.hp,
-            self.ioc,
-            self.ovh,
-            self.dahr,
-            self.avg_waec,
-            self.avg_waer,
-        ]
-
         scores_per_component = []
         for component in components:
             if self._score_cache.get(component.id(), None) is None:
                 score = 0
-                for metric in component_based_metrics:
+                for i, metric in enumerate(self.component_based_metrics):
                     metric_name = metric.__name__
                     logger.debug(f"Calculating {metric_name} for {component}")
-                    score += metric(component)
+                    score += metric(component) * self.weights[i]
                 self._score_cache[component.id()] = score
             scores_per_component.append(self._score_cache[component.id()])
 
-        return sum(scores_per_component) + self.ovr(components)
+        if (len(components) == 0):
+            print("STOP")
+        return sum(scores_per_component) + self.ovr(components) * self.weights[-1]

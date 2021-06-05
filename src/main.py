@@ -1,6 +1,5 @@
 import json
 import logging
-import sys
 from os import getcwd, makedirs
 from os.path import join, split, exists
 from shutil import rmtree
@@ -16,7 +15,13 @@ from search.GeneticSearchConfiguration import GeneticSearchConfiguration
 from visualization.GraphVisualization import visualize_graph
 from visualization.SheetDataVisualization import visualize_sheet_data
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    handlers=[
+        logging.FileHandler("log"),
+        logging.StreamHandler(),
+    ],
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -52,17 +57,18 @@ def process_sheetdata(sheetdata: SheetData, output_dir: str):
     sheet_graph.enable_all_edges()
     visualize_graph(sheet_graph, out=join(sheet_output_dir, 'input_graph'))
 
+    rater = Rater([1 for _ in range(10)])
     if len(sheet_graph.nodes) <= 10:
         # Less than 11 nodes, do exhaustive search
         search = ExhaustiveSearch(
             sheet_graph,
-            Rater(),
+            rater,
         )
     else:
         search = GeneticSearch(
             sheet_graph,
             # TODO: Rater should be trained
-            Rater(),
+            rater,
             GeneticSearchConfiguration(),
         )
 
@@ -94,14 +100,29 @@ def main():
     preprocessor = AnnotationPreprocessor()
     DECO = Dataset(join(DATA_DIR, "Deco"), "Deco", preprocessor)
     FUSTE = Dataset(join(DATA_DIR, "FusTe"), "FusTe", preprocessor)
+    TEST = Dataset(join(DATA_DIR, "Test"), "Test", preprocessor)
+    # TODO: Preprocess Sheets to remove all hidden rows and columns
+    #       I rewrote the annotation preprocessor to skip over hidden rows and columns,
+    #       by creating a list of unhidden col_letters and unhidden row_indices, which I then can access with the
+    #       annotation coordinates. However, as label regions still have to be merged, it would require a major refactor
+    #       to enable label regions to span over hidden rows/columns.
+    #       Therefore I will just remove the hidden rows/columns from the sheet, matching its csv representation
 
     # Takes forever, because there are 334 nodes in this. Keep for later timing debug purposes
     # sheetdata = FUSTE.get_specific_sheetdata("fde8668c-7bc1-4da6-a2b3-833b14453f5f.xlsx", "Sheet1")
 
-    sheetdata = DECO.get_specific_sheetdata("andrea_ring__3__HHmonthlyavg.xlsx", "Monthly HH Flows")
-    process_sheetdata(sheetdata, join(OUTPUT_DIR, DECO.name))
+    # sheetdata = DECO.get_specific_sheetdata("matthew_lenhart__26080__NewPlants0102.xlsx", "By Region")
+    # SpreadSheetGraph(sheetdata)
+
+    # sheetdata = DECO.get_specific_sheetdata("gstorey__12089__Gas Projects.xlsx", "Sheet1")
+    # sheetdata = DECO.get_specific_sheetdata("gstorey__12060__Tony_deals.xlsx", "Sheet1")
+    #
+    # process_sheetdata(sheetdata, join(OUTPUT_DIR, DECO.name))
+    # x = train([SpreadSheetGraph(sd) for sd in TEST.get_sheet_data()])
+    # print(x)
+    # process_sheetdata(sheetdata, join(OUTPUT_DIR, DECO.name))
     # for dataset in [DECO, FUSTE]:
-    #     process_dataset(dataset, 1)
+    process_dataset(TEST, 1)
 
 
 if __name__ == "__main__":
