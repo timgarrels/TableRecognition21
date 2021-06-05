@@ -16,14 +16,14 @@ class AnnotationPreprocessor(object):
         self._worksheet = None
 
     @staticmethod
-    def _flatten_and_rewrite_label_regions(annotation):
+    def _flatten_and_rewrite_label_regions(table_annotations):
         """Flattens the LR element list and clears/replaces labels to
         fit the table model (Header, Data).
         Returns a dict mapping each labale region name to its data dict"""
         # Flatten annotated regions, as we dont want the table ground truth data
         label_regions = []
-        for region in annotation["regions"]:
-            label_regions.extend(region["elements"])
+        for table_annotation in table_annotations:
+            label_regions.extend(table_annotation["elements"])
 
         # Filter / rename specific labels
         # Drop MetaTitles
@@ -192,8 +192,15 @@ class AnnotationPreprocessor(object):
         List[LabelRegion], List[BoundingBox]]:
         """Reads annotations and returns label regions and table definitions, coords start at one"""
         self._worksheet = sheet
+        table_annotations = [region for region in annotations["regions"] if region["region_type"] == "Table"]
+        table_definitions = []
+        for table_annotation in table_annotations:
+            left, top = table_annotation["top_lx"]
+            right, bottom = table_annotation["bot_rx"]
+            table_definitions.append(BoundingBox(top + 1, left + 1, bottom + 1, right + 1))
+
         logger.debug("Rewriting Chair Label Regions...")
-        flattend_lrs = self._flatten_and_rewrite_label_regions(annotations)
+        flattend_lrs = self._flatten_and_rewrite_label_regions(table_annotations)
         logger.debug("Splitting Chair Label Regions into Cells...")
         cell_rows = self._split_lrs_into_cells(flattend_lrs)
 
@@ -202,6 +209,5 @@ class AnnotationPreprocessor(object):
             cell_rows = self._remove_empty_cells(cell_rows)
 
         logger.debug("Merging Cells into Paper Label Regions...")
-        lrs = self._merge_labled_cells_into_lrs(cell_rows)
-        td = self._get_table_definitions(annotations)
-        return lrs, td
+        label_regions = self._merge_labled_cells_into_lrs(cell_rows)
+        return label_regions, table_definitions
