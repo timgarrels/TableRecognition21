@@ -101,12 +101,6 @@ def main():
     DECO = Dataset(join(DATA_DIR, "Deco"), "Deco", preprocessor)
     FUSTE = Dataset(join(DATA_DIR, "FusTe"), "FusTe", preprocessor)
     TEST = Dataset(join(DATA_DIR, "Test"), "Test", preprocessor)
-    # TODO: Preprocess Sheets to remove all hidden rows and columns
-    #       I rewrote the annotation preprocessor to skip over hidden rows and columns,
-    #       by creating a list of unhidden col_letters and unhidden row_indices, which I then can access with the
-    #       annotation coordinates. However, as label regions still have to be merged, it would require a major refactor
-    #       to enable label regions to span over hidden rows/columns.
-    #       Therefore I will just remove the hidden rows/columns from the sheet, matching its csv representation
 
     # Takes forever, because there are 334 nodes in this. Keep for later timing debug purposes
     # sheetdata = FUSTE.get_specific_sheetdata("fde8668c-7bc1-4da6-a2b3-833b14453f5f.xlsx", "Sheet1")
@@ -122,7 +116,7 @@ def main():
     # print(x)
     # process_sheetdata(sheetdata, join(OUTPUT_DIR, DECO.name))
     # for dataset in [DECO, FUSTE]:
-    process_dataset(TEST, 1)
+    # process_dataset(TEST, 1)
 
 
 if __name__ == "__main__":
