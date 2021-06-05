@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 # TODO: Implement weight training
 class Rater(object):
     def __init__(self, weights: List[float]):
-        self._score_cache: Dict[str, float] = {}
+        # Cache from component & metric to score
+        self._score_cache: Dict[str, Dict[str, float]] = {}
         self.component_based_metrics: List[Callable[[GraphComponentData], float]] = [
             self.ndar,
             self.nhar,
@@ -31,6 +32,22 @@ class Rater(object):
             self.avg_waer,
         ]
         self.weights = weights
+
+    def get_from_cache(
+            self,
+            component: GraphComponentData,
+            metric: Callable[[GraphComponentData], float],
+    ) -> float:
+        component_id = component.id()
+        metric_name = metric.__name__
+
+        if self._score_cache.get(component_id, None) is None:
+            # Component Id not yet in cache
+            self._score_cache[component_id] = {}
+        if self._score_cache[component_id].get(metric_name, None) is None:
+            # No metric score yet
+            self._score_cache[component_id][metric_name] = metric(component)
+        return self._score_cache[component_id][metric_name]
 
     def ndar(self, component: GraphComponentData) -> float:
         if len(component.c_d) < 1 or len(component.c_ht) < 1:
@@ -200,21 +217,18 @@ class Rater(object):
     def rate(self, graph: SpreadSheetGraph, edge_toggle_list: List[bool]) -> float:
         """Rates a graph based on a edge toggle list"""
         # Create graph copy and let it represent the partition
-        new_graph = graph
-        new_graph.edge_toggle_list = edge_toggle_list
+
+        old_toggle_list = graph.edge_toggle_list
+        graph.edge_toggle_list = edge_toggle_list
         components = [GraphComponentData(c, graph) for c in graph.get_components()]
+        graph.edge_toggle_list = old_toggle_list
 
         scores_per_component = []
         for component in components:
-            if self._score_cache.get(component.id(), None) is None:
-                score = 0
-                for i, metric in enumerate(self.component_based_metrics):
-                    metric_name = metric.__name__
-                    logger.debug(f"Calculating {metric_name} for {component}")
-                    score += metric(component) * self.weights[i]
-                self._score_cache[component.id()] = score
-            scores_per_component.append(self._score_cache[component.id()])
+            score = 0
+            for i, metric in enumerate(self.component_based_metrics):
+                metric_score = self.get_from_cache(component, metric)
+                score += metric_score * self.weights[i]
+            scores_per_component.append(score)
 
-        if (len(components) == 0):
-            print("STOP")
         return sum(scores_per_component) + self.ovr(components) * self.weights[-1]

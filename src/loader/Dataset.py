@@ -3,7 +3,7 @@ import logging
 from functools import cached_property
 from os import listdir
 from os.path import isfile, join, split
-from typing import Iterable
+from typing import Generator
 
 from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
@@ -62,8 +62,8 @@ class Dataset(object):
 
     def _get_workbooks(self):
         """Generator for all Workbook Objects"""
-        for xls_path in self._get_xls_file_paths():
-            logger.info(f"Loading workbook {xls_path}")
+        for i, xls_path in enumerate(self._get_xls_file_paths()):
+            logger.info(f"Loading workbook {i}/{len(self._get_xls_file_paths())}: {xls_path}")
             try:
                 wb = load_workbook(xls_path)
             except:
@@ -73,7 +73,7 @@ class Dataset(object):
             wb.path = xls_path  # Path is wrongly defaulted to /xl/workbook.xml
             yield wb
 
-    def get_sheet_data(self) -> Iterable[SheetData]:
+    def get_sheet_data(self) -> Generator[SheetData, None, None]:
         """Generator for all Sheet Data Objects"""
         for workbook in self._get_workbooks():
             for sheet in workbook:
