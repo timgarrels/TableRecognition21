@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG)
 
 
-# TODO: Implement weight training
-class Rater(object):
+class FitnessRater(object):
     def __init__(self, weights: List[float]):
+        # TODO: Move caching out of here to make cache persitent over training intervals
         # Cache from component & metric to score
         self._score_cache: Dict[str, Dict[str, float]] = {}
         self.component_based_metrics: List[Callable[[GraphComponentData], float]] = [

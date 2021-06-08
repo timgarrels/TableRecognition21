@@ -2,14 +2,14 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from graph.SpreadSheetGraph import SpreadSheetGraph
-from rater.Rater import Rater
+from rater.FitnessRater import FitnessRater
 
 
 class AbstractSearch(ABC):
     def __init__(
             self,
             graph: SpreadSheetGraph,
-            rater: Rater,
+            rater: FitnessRater,
     ):
         self.graph = graph
         self.rater = rater

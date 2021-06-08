@@ -3,16 +3,16 @@ import logging
 from os import getcwd, makedirs
 from os.path import join, split, exists
 from shutil import rmtree
+from typing import List
 
 from graph.SpreadSheetGraph import SpreadSheetGraph
 from labelregions.AnnotationPreprocessor import AnnotationPreprocessor
 from loader.Dataset import Dataset
 from loader.SheetData import SheetData
-from rater.Rater import Rater
+from rater.FitnessRater import FitnessRater
 from search.ExhaustiveSearch import ExhaustiveSearch
 from search.GeneticSearch import GeneticSearch
 from search.GeneticSearchConfiguration import GeneticSearchConfiguration
-from train.SQP import train
 from visualization.GraphVisualization import visualize_graph
 from visualization.SheetDataVisualization import visualize_sheet_data
 
@@ -31,12 +31,15 @@ DATA_DIR = join(getcwd(), "data")
 OUTPUT_DIR = join(getcwd(), "output")
 
 
-def process_sheetdata(sheetdata: SheetData, output_dir: str, visualize=False):
+def process_sheetdata(sheetdata: SheetData, output_dir: str, weights: List[float] = None, visualize=False):
+    if weights is None:
+        weights = [1.0 for _ in range(10)]
     sheet_output_dir = join(
         output_dir,
         split(sheetdata.parent_path)[1],
         sheetdata.worksheet.title,
     )
+
     if exists(sheet_output_dir):
         rmtree(sheet_output_dir)
     makedirs(sheet_output_dir, exist_ok=True)
@@ -60,7 +63,7 @@ def process_sheetdata(sheetdata: SheetData, output_dir: str, visualize=False):
         sheet_graph.enable_all_edges()
         visualize_graph(sheet_graph, out=join(sheet_output_dir, 'input_graph'))
 
-    rater = Rater([1 for _ in range(10)])
+    rater = FitnessRater(weights)
     if len(sheet_graph.nodes) <= 10:
         # Less than 11 nodes, do exhaustive search
         search = ExhaustiveSearch(
@@ -70,7 +73,6 @@ def process_sheetdata(sheetdata: SheetData, output_dir: str, visualize=False):
     else:
         search = GeneticSearch(
             sheet_graph,
-            # TODO: Rater should be trained
             rater,
             GeneticSearchConfiguration(),
         )
@@ -129,9 +131,12 @@ def main():
         0.00000000e+00,
         3.59439351e+01,
     ]
-
-    x = train([SpreadSheetGraph(sd) for sd in DECO.get_sheet_data()])
-    print(x)
+    process_sheetdata(
+        DECO.get_specific_sheetdata("andrea_ring__3__HHmonthlyavg.xlsx", "Monthly HH Flows"),
+        join(OUTPUT_DIR, "test_important"),
+        weights=example_weights,
+        visualize=True
+    )
 
 
 if __name__ == "__main__":

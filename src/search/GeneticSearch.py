@@ -5,7 +5,7 @@ import random
 from typing import List, Dict
 
 from graph.SpreadSheetGraph import SpreadSheetGraph
-from rater.Rater import Rater
+from rater.FitnessRater import FitnessRater
 from search.AbstractSearch import AbstractSearch
 from search.GeneticSearchConfiguration import GeneticSearchConfiguration
 
@@ -17,7 +17,7 @@ class GeneticSearch(AbstractSearch):
     def __init__(
             self,
             graph: SpreadSheetGraph,
-            rater: Rater,
+            rater: FitnessRater,
             configuration: GeneticSearchConfiguration,
     ):
         self.configuration = configuration

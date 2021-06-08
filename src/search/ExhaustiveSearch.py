@@ -1,7 +1,7 @@
 """Implements genetic search on SpreadsheetGraphs"""
 import logging
 
-from rater.Rater import Rater
+from rater.FitnessRater import FitnessRater
 from search.AbstractSearch import AbstractSearch
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ def test():
             self.edge_list = [1 for _ in range(edge_count)]
             self.edge_toggle_list = [True for _ in range(len(self.edge_list))]
 
-    class MockRater(Rater):
+    class MockRater(FitnessRater):
         def __init__(self):
             pass
 

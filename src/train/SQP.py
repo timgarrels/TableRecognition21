@@ -5,7 +5,7 @@ from typing import List, Dict
 from scipy.optimize import minimize, Bounds
 
 from graph.SpreadSheetGraph import SpreadSheetGraph
-from rater.Rater import Rater
+from rater.FitnessRater import FitnessRater
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -13,7 +13,7 @@ logger.setLevel(logging.DEBUG)
 
 def objective_function(weights: List[float], partitions: Dict[SpreadSheetGraph, List[List[bool]]]):
     """Objective function proposed by the paper"""
-    rater = Rater(weights)
+    rater = FitnessRater(weights)
     score = 0
     for graph, alternative_toggle_lists in partitions.items():
         target_partition_part = 1 + rater.rate(graph, graph.edge_toggle_list)
