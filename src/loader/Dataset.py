@@ -78,7 +78,7 @@ class Dataset(object):
             wb.path = xls_path  # Path is wrongly defaulted to /xl/workbook.xml
             yield wb
 
-    def get_sheet_data(self, start_from_xls_file: str) -> Generator[SheetData, None, None]:
+    def get_sheet_data(self, start_from_xls_file: str = None) -> Generator[SheetData, None, None]:
         """Generator for all Sheet Data Objects"""
         for workbook in Dataset._get_workbooks(self._get_xls_file_paths(start_from_xls_file)):
             for sheet in workbook:

@@ -43,7 +43,7 @@ def process_and_visualize_sheetdata(sheetdata: SheetData, output_dir: str, weigh
     ground_truth = sheet_graph.get_table_definitions()
     logger.info(f"Exporting ground truth table definition")
     with open(join(sheet_output_dir, "ground_truth_table_definition.json"), "w", encoding="utf-8") as f:
-        json.dump([dict(bb) for bb in ground_truth], f, ensure_ascii=False, indent=4)
+        json.dump([bb.__dict__() for bb in ground_truth], f, ensure_ascii=False, indent=4)
 
     if visualize:
         logger.info(f"Visualizing ground truth graph")
@@ -65,7 +65,7 @@ def process_and_visualize_sheetdata(sheetdata: SheetData, output_dir: str, weigh
         search = GeneticSearch(
             sheet_graph,
             rater,
-            GeneticSearchConfiguration(),
+            GeneticSearchConfiguration(sheet_graph),
         )
     logger.info(f"Running search...")
     sheet_graph = search.run()
@@ -78,7 +78,7 @@ def process_and_visualize_sheetdata(sheetdata: SheetData, output_dir: str, weigh
     detected = sheet_graph.get_table_definitions()
     logger.info(f"Exporting fittest table definition")
     with open(join(sheet_output_dir, "fittest_table_definition.json"), "w", encoding="utf-8") as f:
-        json.dump([dict(bb) for bb in detected], f, ensure_ascii=False, indent=4)
+        json.dump([bb.__dict__() for bb in detected], f, ensure_ascii=False, indent=4)
 
     if visualize:
         logger.info(f"Visualizing Computed Label Regions and Table Definition of sheet '{sheetdata}'")

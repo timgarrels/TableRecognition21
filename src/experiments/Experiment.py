@@ -17,8 +17,11 @@ class Experiment(ABC):
         self._output_dir = join(output_dir, dataset.name, self.__class__.__name__)
 
         makedirs(self._output_dir, exist_ok=True)
+
+        self._start_from_xls_file = None
         files_in_out_dir = sorted([f for f in listdir(self._output_dir) if isfile(join(self._output_dir, f))])
-        self._start_from_xls_file = files_in_out_dir[-1].replace("_result.json", "")
+        if len(files_in_out_dir) > 0:
+            self._start_from_xls_file = files_in_out_dir[-1].replace("_result.json", "")
 
     def start(self):
         for sheetdata in self._dataset.get_sheet_data(self._start_from_xls_file):

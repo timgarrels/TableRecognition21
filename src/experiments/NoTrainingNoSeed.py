@@ -26,7 +26,7 @@ class NoTrainingNoSeed(Experiment):
             search = GeneticSearch(
                 sheet_graph,
                 rater,
-                GeneticSearchConfiguration(),
+                GeneticSearchConfiguration(sheet_graph),
             )
         sheet_graph = search.run()
         detected = sheet_graph.get_table_definitions()
