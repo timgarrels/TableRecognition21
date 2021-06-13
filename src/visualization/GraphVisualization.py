@@ -28,4 +28,4 @@ def visualize_graph(graph: SpreadSheetGraph, output_format="png", engine="dot", 
         style = "solid" if edge.alignment_type == AlignmentType.HORIZONTAL else "dashed"
         g.edge(str(edge.source.id), str(edge.destination.id), style=style, color=color)
 
-    g.render(out)
+    g.render(out, cleanup=True)

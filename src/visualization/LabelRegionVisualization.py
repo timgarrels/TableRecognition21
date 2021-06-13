@@ -17,7 +17,7 @@ def color_from_int(i: int) -> str:
     return h.hexdigest()[:8]
 
 
-def add_lr_visualization(lrs: List[LabelRegion], workbook: Workbook, sheet_name="Label Region Visualization"):
+def add_lr_visualization_sheet(lrs: List[LabelRegion], workbook: Workbook, sheet_name="Label Region Visualization"):
     """Creates a colorful spreadsheet from the lr data"""
     ws = workbook.create_sheet(sheet_name)
     for i, lr in enumerate(lrs):
