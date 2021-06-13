@@ -10,7 +10,9 @@ from search.AbstractSearch import AbstractSearch
 from search.GeneticSearchConfiguration import GeneticSearchConfiguration
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+
+
+# logger.setLevel(logging.DEBUG)
 
 
 class GeneticSearch(AbstractSearch):
@@ -32,8 +34,8 @@ class GeneticSearch(AbstractSearch):
         return [random.choice([True, False]) for _ in range(len(self.graph.edge_list))]
 
     def run(self) -> SpreadSheetGraph:
-        logger.info("Running Genetic Search...")
-        logger.info("Creating initial population...")
+        logger.debug("Running Genetic Search...")
+        logger.debug("Creating initial population...")
         n_pop = math.ceil(math.log10(len(self.graph.edge_list)) * 100)
         n_offspring = n_pop
         n_survivors = n_pop
@@ -51,7 +53,7 @@ class GeneticSearch(AbstractSearch):
 
         logger.debug(f"Fittest: {self.str_toggle_list(hof_individual)}")
 
-        logger.info("Starting genetic search...")
+        logger.debug("Starting genetic search...")
         for generation in range(self.configuration.n_gen):
             logger.debug(f"Generation {generation}")
             # createOffsprings
@@ -71,8 +73,8 @@ class GeneticSearch(AbstractSearch):
             pop, ratings = self.select_fittest(pop, ratings, children, children_ratings, n_survivors,
                                                self.configuration.rooster_size)
 
-        logger.info(f"Best rating: {hof_rating}")
-        logger.info(f"Best individual: {hof_individual}")
+        logger.debug(f"Best rating: {hof_rating}")
+        logger.debug(f"Best individual: {hof_individual}")
         self.graph.edge_toggle_list = hof_individual
         return self.graph
 
