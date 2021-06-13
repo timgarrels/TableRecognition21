@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+# TODO: Implement proper weight tuning, with multiple, averaging runs, cross-validation, and with & without (?) noise
 def objective_function(weights: List[float], partitions: Dict[SpreadSheetGraph, List[List[bool]]], rater: FitnessRater):
     """Objective function proposed by the paper"""
     rater.weights = weights
