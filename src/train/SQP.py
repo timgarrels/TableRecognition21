@@ -11,9 +11,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def objective_function(weights: List[float], partitions: Dict[SpreadSheetGraph, List[List[bool]]]):
+def objective_function(weights: List[float], partitions: Dict[SpreadSheetGraph, List[List[bool]]], rater: FitnessRater):
     """Objective function proposed by the paper"""
-    rater = FitnessRater(weights)
+    rater.weights = weights
     score = 0
     for graph, alternative_toggle_lists in partitions.items():
         target_partition_part = 1 + rater.rate(graph, graph.edge_toggle_list)
@@ -39,10 +39,13 @@ def train(graphs: List[SpreadSheetGraph]):
         partitions[graph] = generate_alternatives(graph, 10)
 
     initial_weights = [1 for _ in range(10)]
+    # Create rater object outside to leverage caching
+    rater = FitnessRater(initial_weights)
+
     res = minimize(
         objective_function,
         initial_weights,
-        args=partitions,
+        args=(partitions, rater),
         method="SLSQP",
         bounds=Bounds(0, 1000),
     )

@@ -4,6 +4,7 @@ from itertools import chain
 from typing import List, Callable, Dict
 
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.worksheet import Worksheet
 
 from graph.GraphComponentData import GraphComponentData
 from graph.SpreadSheetGraph import SpreadSheetGraph
@@ -17,9 +18,8 @@ logger = logging.getLogger(__name__)
 
 class FitnessRater(object):
     def __init__(self, weights: List[float]):
-        # TODO: Move caching out of here to make cache persitent over training intervals
         # Cache from component & metric to score
-        self._score_cache: Dict[str, Dict[str, float]] = {}
+        self._score_cache: Dict[Worksheet, Dict[str, Dict[str, float]]] = {}
         self.component_based_metrics: List[Callable[[GraphComponentData], float]] = [
             self.ndar,
             self.nhar,
@@ -35,19 +35,23 @@ class FitnessRater(object):
 
     def get_from_cache(
             self,
+            sheet: Worksheet,
             component: GraphComponentData,
             metric: Callable[[GraphComponentData], float],
     ) -> float:
         component_id = component.id()
         metric_name = metric.__name__
 
-        if self._score_cache.get(component_id, None) is None:
+        if self._score_cache.get(sheet, None) is None:
+            # Sheet is not yet in cache
+            self._score_cache[sheet] = {}
+        if self._score_cache[sheet].get(component_id, None) is None:
             # Component Id not yet in cache
-            self._score_cache[component_id] = {}
-        if self._score_cache[component_id].get(metric_name, None) is None:
+            self._score_cache[sheet][component_id] = {}
+        if self._score_cache[sheet][component_id].get(metric_name, None) is None:
             # No metric score yet
-            self._score_cache[component_id][metric_name] = metric(component)
-        return self._score_cache[component_id][metric_name]
+            self._score_cache[sheet][component_id][metric_name] = metric(component)
+        return self._score_cache[sheet][component_id][metric_name]
 
     def ndar(self, component: GraphComponentData) -> float:
         if len(component.c_d) < 1 or len(component.c_ht) < 1:
@@ -227,7 +231,7 @@ class FitnessRater(object):
         for component in components:
             score = 0
             for i, metric in enumerate(self.component_based_metrics):
-                metric_score = self.get_from_cache(component, metric)
+                metric_score = self.get_from_cache(graph.sheet, component, metric)
                 score += metric_score * self.weights[i]
             scores_per_component.append(score)
 
