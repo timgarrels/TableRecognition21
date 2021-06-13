@@ -1,5 +1,6 @@
 from __future__ import annotations  # Necessary so class can refer to its own type in itself
 
+from itertools import product
 from typing import List
 
 
@@ -16,12 +17,14 @@ class BoundingBox(object):
 
     def intersect(self, box: BoundingBox):
         """Returns whether two bounding boxes intersect"""
-        # TODO: Can be done smarter and more performant by top_left bottom_right comparison
-        x_overlap = set(self.get_all_x()).intersection(box.get_all_x())
-        y_overlap = set(self.get_all_y()).intersection(box.get_all_y())
-        if len(x_overlap) > 0 and len(y_overlap) > 0:
-            return True
-        return False
+        return len(self.intersection(box)) > 0
+
+    def intersection(self, box: BoundingBox):
+        """Returns the cells that are present in both this and the given box"""
+        return set(self.cells()).intersection(box.cells())
+
+    def cells(self):
+        return list(product(self.get_all_y(), self.get_all_y()))
 
     def get_all_x(self):
         return [x for x in range(self.left, self.right + 1)]
