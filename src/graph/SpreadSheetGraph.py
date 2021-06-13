@@ -10,7 +10,9 @@ from labelregions.LabelRegion import LabelRegion
 from loader.SheetData import SheetData
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+
+
+# logger.setLevel(logging.DEBUG)
 
 
 class SpreadSheetGraph(object):
@@ -55,7 +57,7 @@ class SpreadSheetGraph(object):
         # WARNING: Based on the assumption, that each row index / col index can match only once
         # That means that three regions H1, D1, H2 that span the exact same cols and are directly on top of each other
         # That H1 is not connected to H2, because the edge H1-D1 already uses all col indices
-        logger.info("Creating Spreadsheet Graph...")
+        logger.debug("Creating Spreadsheet Graph...")
         existing_edges = []
         edge_list = []
 
@@ -177,13 +179,3 @@ class SpreadSheetGraph(object):
 
     def get_table_definitions(self):
         return [BoundingBox.merge(component) for component in self.get_components()]
-
-    def table_definition_dict(self):
-        """Exports the table definition bounding boxes"""
-        bounding_box_definitions = [{
-            "top": bb.top,
-            "left": bb.left,
-            "bottom": bb.bottom,
-            "right": bb.left,
-        } for bb in self.get_table_definitions()]
-        return sorted(bounding_box_definitions, key=lambda d: (d["top"], d["left"], d["bottom"], d["right"]))

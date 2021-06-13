@@ -45,3 +45,11 @@ class BoundingBox(object):
         max_x = max(bottoms)
         max_y = max(rights)
         return BoundingBox(min_x, min_y, max_x, max_y)
+
+    def __dict__(self):
+        return {
+            "top": self.top,
+            "left": self.left,
+            "bottom": self.bottom,
+            "right": self.left,
+        }
