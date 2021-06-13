@@ -150,7 +150,6 @@ class FitnessRater(object):
         # Groups not necessary for total width of empty columns, just iterate over all empty columns
         total_width = 0
         for empty_column in empty_columns:
-            # TODO: This might die because empty column starts at 0, and has to be incremented by 1
             width = component.graph.sheet.column_dimensions[get_column_letter(empty_column)].width
             if width is None:
                 # Dimensions are None if default values are used
@@ -190,7 +189,6 @@ class FitnessRater(object):
         # Groups not necessary for total height of empty rows, just iterate over all empty rows
         total_height = 0
         for empty_row in empty_rows:
-            # TODO: This might die because empty row starts at 0, and has to be incremented by 1
             height = component.graph.sheet.row_dimensions[empty_row].height
             if height is None:
                 # Dimensions are None if default values are used
