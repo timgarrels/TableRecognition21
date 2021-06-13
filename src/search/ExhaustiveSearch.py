@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class ExhaustiveSearch(AbstractSearch):
 
     def run(self):
-        logger.info("Running Exhaustive Search...")
+        logger.debug("Running Exhaustive Search...")
         bits = len(self.graph.edge_toggle_list)
         numbers = 2 ** bits
 
@@ -27,8 +27,8 @@ class ExhaustiveSearch(AbstractSearch):
                 fittest_rating = rating
                 fittest_partition = toggle_list
 
-        logger.info(f"Best rating: {fittest_rating}")
-        logger.info(f"Best individual: {fittest_partition}")
+        logger.debug(f"Best rating: {fittest_rating}")
+        logger.debug(f"Best individual: {fittest_partition}")
         self.graph.edge_toggle_list = fittest_partition
         return self.graph
 
