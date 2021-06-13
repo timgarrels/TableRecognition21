@@ -81,11 +81,10 @@ def area_precision_and_recall(ground_truth_tables: List[BoundingBox], detected_t
     for ground_truth_table in ground_truth_tables:
         cells_in_ground_truth_tables.extend(ground_truth_table.cells())
 
-    detected_cells_in_ground_truth = [cell for cell in cells_in_detected_tables if cell in cells_in_ground_truth_tables]
-    area_precision = len(detected_cells_in_ground_truth) / len(cells_in_detected_tables)
+    true_positives = set(cells_in_detected_tables).intersection(cells_in_ground_truth_tables)
+    area_precision = len(true_positives) / len(cells_in_detected_tables)
 
-    detected_ground_truth_cells = [cell for cell in cells_in_ground_truth_tables if cell in cells_in_detected_tables]
-    area_recall = len(detected_ground_truth_cells) / len(cells_in_ground_truth_tables)
+    area_recall = len(true_positives) / len(cells_in_ground_truth_tables)
 
     return {
         "area_precision": area_precision,
