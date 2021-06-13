@@ -3,7 +3,7 @@ import logging
 from functools import cached_property
 from os import listdir
 from os.path import isfile, join, split
-from typing import Generator
+from typing import Generator, List
 
 from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
@@ -46,9 +46,13 @@ class Dataset(object):
         annotations_key = xls_name + '_' + sheetname + '.csv'
         return self._annotations[annotations_key]
 
-    def _get_xls_file_paths(self):
+    def _get_xls_file_paths(self, start_from: str = None):
         xls_file_directory = join(self.path, "xls")
-        xls_files = [xls_file for xls_file in listdir(xls_file_directory) if isfile(join(xls_file_directory, xls_file))]
+        xls_files = sorted(
+            [xls_file for xls_file in listdir(xls_file_directory) if isfile(join(xls_file_directory, xls_file))])
+
+        if start_from is not None:
+            xls_files = xls_files[xls_files.index(start_from):]
         return [join(xls_file_directory, xls_file) for xls_file in xls_files]
 
     @staticmethod
@@ -60,10 +64,11 @@ class Dataset(object):
             return True
         return False
 
-    def _get_workbooks(self):
+    @staticmethod
+    def _get_workbooks(xls_file_paths: List[str]):
         """Generator for all Workbook Objects"""
-        for i, xls_path in enumerate(self._get_xls_file_paths()):
-            logger.info(f"Loading workbook {i}/{len(self._get_xls_file_paths())}: {xls_path}")
+        for i, xls_path in enumerate(xls_file_paths):
+            logger.info(f"Loading workbook {i}/{len(xls_file_paths)}: {xls_path}")
             try:
                 wb = load_workbook(xls_path)
             except:
@@ -73,9 +78,9 @@ class Dataset(object):
             wb.path = xls_path  # Path is wrongly defaulted to /xl/workbook.xml
             yield wb
 
-    def get_sheet_data(self) -> Generator[SheetData, None, None]:
+    def get_sheet_data(self, start_from_xls_file: str) -> Generator[SheetData, None, None]:
         """Generator for all Sheet Data Objects"""
-        for workbook in self._get_workbooks():
+        for workbook in Dataset._get_workbooks(self._get_xls_file_paths(start_from_xls_file)):
             for sheet in workbook:
                 if Dataset.worksheet_contains_hidden(sheet):
                     logger.debug(
