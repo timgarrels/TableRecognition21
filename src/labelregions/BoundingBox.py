@@ -24,7 +24,7 @@ class BoundingBox(object):
         return set(self.cells()).intersection(box.cells())
 
     def cells(self):
-        return list(product(self.get_all_y(), self.get_all_y()))
+        return list(product(self.get_all_x(), self.get_all_y()))
 
     def get_all_x(self):
         return [x for x in range(self.left, self.right + 1)]
