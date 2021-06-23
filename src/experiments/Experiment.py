@@ -18,13 +18,11 @@ class Experiment(ABC):
 
         makedirs(self._output_dir, exist_ok=True)
 
-        self._start_from_xls_file = None
-        files_in_out_dir = sorted([f for f in listdir(self._output_dir) if isfile(join(self._output_dir, f))])
-        if len(files_in_out_dir) > 0:
-            self._start_from_xls_file = files_in_out_dir[-1].replace("_result.json", "")
+        self._already_processed = sorted(
+            [f.replace("_result.json", "") for f in listdir(self._output_dir) if isfile(join(self._output_dir, f))])
 
     def start(self):
-        for sheetdata in self._dataset.get_sheet_data(self._start_from_xls_file):
+        for sheetdata in self._dataset.get_sheet_data(self._already_processed):
             logger.info(f"Processing sheetdata {sheetdata}")
             result = self.process(sheetdata)
 
