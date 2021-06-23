@@ -1,6 +1,8 @@
+"""Utils to summarize Experimental Results"""
 import json
 from os import listdir
 from os.path import isfile, join
+from typing import Dict
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,7 +13,7 @@ class Summarizer(object):
     def __init__(self, experiment_path: str):
         self._experiment_path = experiment_path
 
-    def load_results(self):
+    def load_results(self) -> Dict:
         results = {}
         files = [f for f in listdir(self._experiment_path) if isfile(join(self._experiment_path, f))]
         for file in files:
@@ -25,7 +27,8 @@ class Summarizer(object):
             results[xml_file] = {"result_dict": result_dict, "table_count": table_count}
         return results
 
-    def split_results(self):
+    def split_results(self) -> Dict:
+        """Splits the results into single and multitable results"""
         results = self.load_results()
 
         multi_table = []
@@ -46,6 +49,7 @@ class Summarizer(object):
         return {"all": all, "single": single_table, "multi": multi_table}
 
     def summarize(self):
+        """Prints Precision, Recall and F1 of results"""
         results = self.split_results()
         precision = [
             [d["area_precision"] for d in results["all"]],
@@ -75,7 +79,8 @@ class Summarizer(object):
             print("\tF1")
             print(f"\t\tMin: {min(f1[i])}\n\t\tMax: {max(f1[i])}\n\t\tMean: {sum(f1[i]) / len(f1[i])}")
 
-    def plot(self):
+    def boxplot_bayesian(self):
+        """PLot Precision, Recall and F1 in BoxPlots"""
         results = self.split_results()
 
         fig1, (ax1, ax2, ax3) = plt.subplots(1, 3)
@@ -118,6 +123,7 @@ class Summarizer(object):
         fig1.savefig("plot")
 
     def reproduce_fig_2(self):
+        """Creates the sub-figures of figure 2 of the paper"""
         results = self.load_results()
 
         sheet_to_table_count = dict([(file, result["table_count"]) for file, result in results.items()])
