@@ -14,12 +14,22 @@ logger.setLevel(logging.INFO)
 class Experiment(ABC):
     def __init__(self, dataset: Dataset, output_dir: str):
         self._dataset = dataset
+        if self._dataset.annotation_preprocessor.introduce_noise != self.expect_noise:
+            raise ValueError(
+                f"This experiment ('{self.__class__.__name__}') expects noise={self.expect_noise}"
+                f", but the dataset uses a preprocessor with noise="
+                f"{self._dataset.annotation_preprocessor.introduce_noise}")
+
         self._output_dir = join(output_dir, dataset.name, self.__class__.__name__)
 
         makedirs(self._output_dir, exist_ok=True)
 
         self._already_processed = sorted(
             [f.replace("_result.json", "") for f in listdir(self._output_dir) if isfile(join(self._output_dir, f))])
+
+    @property
+    def expect_noise(self):
+        return False
 
     def start(self):
         for sheetdata in self._dataset.get_sheet_data(self._already_processed):
