@@ -1,4 +1,6 @@
 import logging
+import math
+import random
 from typing import List, Dict, Tuple
 
 from openpyxl.worksheet.worksheet import Worksheet
@@ -11,8 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 class AnnotationPreprocessor(object):
-    def __init__(self, remove_empty_cells=True):
+    def __init__(self, remove_empty_cells=True, introduce_noise=False):
         self.remove_empty_cells = remove_empty_cells
+        self.introduce_noise = introduce_noise
+        self.noise_rate = 0.001
         self._worksheet = None
 
     @staticmethod
@@ -188,6 +192,37 @@ class AnnotationPreprocessor(object):
                 table_definitions.append(BoundingBox(top + 1, left + 1, bottom + 1, right + 1))
         return table_definitions
 
+    def _introduce_noise(self, cell_rows: List):
+        """Relabels or omits cells"""
+        # Create index map
+        indices = []
+        for y, row in enumerate(cell_rows):
+            indices.extend([(y, x) for x in range(len(row))])
+
+        total_cells = len(indices)
+        noise_cell_count = min(1, math.ceil(self.noise_rate * total_cells))
+        indices_to_be_noised = random.sample(indices, noise_cell_count)
+        for y, x in indices_to_be_noised:
+            if random.randint(0, 1) == 0:
+                # Relabel
+                new_label = "Data"
+                if cell_rows[y][x]["type"] == new_label:
+                    new_label = "Header"
+                cell_rows[y][x]["type"] = new_label
+            else:
+                # Mark for Omit
+                cell_rows[y][x]["type"] = "Omit"
+
+        # Remove cells to omit
+        empty_row_indices = []
+        for y, row in enumerate(cell_rows):
+            new_row = [cell for cell in row if cell["type"] != "Omit"]
+            cell_rows[y] = new_row
+            if len(new_row) == 0:
+                empty_row_indices.append(y)
+        # Remove now potentially empty rows
+        return [row for y, row in enumerate(cell_rows) if y not in empty_row_indices]
+
     def preprocess_annotations(self, sheet: Worksheet, annotations: Dict) -> Tuple[
         List[LabelRegion], List[BoundingBox]]:
         """Reads annotations and returns label regions and table definitions, coords start at one"""
@@ -207,6 +242,10 @@ class AnnotationPreprocessor(object):
         if self.remove_empty_cells:
             logger.debug("Removing Empty Cells...")
             cell_rows = self._remove_empty_cells(cell_rows)
+
+        if self.introduce_noise:
+            logger.debug("Introducing Noise")
+            cell_rows = self._introduce_noise(cell_rows)
 
         logger.debug("Merging Cells into Paper Label Regions...")
         label_regions = self._merge_labled_cells_into_lrs(cell_rows)
