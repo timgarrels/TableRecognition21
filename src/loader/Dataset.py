@@ -129,5 +129,26 @@ class Dataset(object):
         )
         return SheetData(sheet, label_regions, table_definitions)
 
+    def summarize(self):
+        """Summarizes Dataset Annotations"""
+        data = self._annotations
+
+        analytical_data = {}
+        for sheet, sheetdata in data.items():
+            analytical_data[sheet] = {
+                "table_count": 0,
+            }
+            for region in sheetdata["regions"]:
+                if region["region_type"] == "Table":
+                    analytical_data[sheet]["table_count"] += 1
+
+        print(f"Total Sheets: {len(analytical_data.keys())}")
+        print(
+            f"Single Table Sheets: {len([sheet for sheet, analytical_sheetdata in analytical_data.items() if analytical_sheetdata['table_count'] == 1])}")
+        print(
+            f"Multi Table Sheets: {len([sheet for sheet, analytical_sheetdata in analytical_data.items() if analytical_sheetdata['table_count'] > 1])}")
+
+        print(f"Total Annotatd Tables: {sum([data['table_count'] for data in analytical_data.values()])}")
+
     def __str__(self):
         return f"Dataset: {self.name}"
