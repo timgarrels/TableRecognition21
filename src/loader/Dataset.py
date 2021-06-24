@@ -34,8 +34,21 @@ class Dataset(object):
         return json.loads(data)
 
     @property
-    def sheet_data_count(self):
-        return len(self._annotations.keys())
+    def multi_table_keys(self):
+        return [key for key, value in self._annotations.items() if value["n_regions"] > 1]
+
+    @property
+    def single_table_keys(self):
+        return [key for key, value in self._annotations.items() if value["n_regions"] == 1]
+
+    @property
+    def keys(self):
+        return self._annotations.keys()
+
+    def sheet_data_count(self, exceptions: List[str] = None):
+        if exceptions is None:
+            exceptions = []
+        return len(set(self._annotations.keys()).difference(exceptions))
 
     def get_sheet_data(self, exceptions: List[str] = None) -> Generator[SheetData, None, None]:
         """Generator for all Sheet Data Objects"""
