@@ -200,7 +200,7 @@ class LabelRegionLoader(object):
         # Remove now potentially empty rows
         return [row for y, row in enumerate(cell_rows) if y not in empty_row_indices]
 
-    def preprocess_annotations(self, sheet: Worksheet, annotations: Dict) -> Tuple[
+    def load_label_regions_and_table_definitions(self, sheet: Worksheet, annotations: Dict) -> Tuple[
         List[LabelRegion], List[BoundingBox]]:
         """Reads annotations and returns label regions and table definitions, coords start at one"""
         self._worksheet = sheet

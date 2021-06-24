@@ -12,6 +12,20 @@ from tqdm import tqdm
 logger = logging.getLogger(__name__)
 
 
+# TODO: Preprocess Sheets to remove all hidden rows and columns
+#       The Chair Annotations are based on csv's, which do not contain hidden cols/rows. This means that
+#       we have to handle hidden rows/cols somehow. CUrrently, all sheets with hidden cols/rows are just skipped
+#       There are multiple possible solutions:
+#       1. Work on the csv files, by turning them into xls again. Easiest solution, requires little work
+#           Problem: width and height are lost, which are required for certain metrics
+#       2. Remove hidden rows/cols from the xls, by shifting data. Supported by openpyxl
+#           Problem: Shifts only data, not formatting width and height are now wrongly assigned.
+#       3. I rewrote the annotation preprocessor to skip over hidden rows and columns,
+#           by creating a list of unhidden col_letters and unhidden row_indices, which I then can access with the
+#           annotation coordinates
+#           Problem: As label regions still have to be merged, it would require a major refactor
+#           to enable label regions to span over hidden rows/columns.
+
 class DataPreprocessor(object):
     def __init__(self, data_path: str, preprocessed_annotation_file_name: str, remove_hidden=True,
                  file_size_cap=1000 * 100):

@@ -1,33 +1,17 @@
 import json
 import logging
 from functools import cached_property
-from os import listdir
-from os.path import isfile, join, split, getsize
+from os.path import join
 from typing import Generator, List
 
 from openpyxl import load_workbook
-from openpyxl.worksheet.worksheet import Worksheet
 
 from labelregions.LabelRegionLoader import LabelRegionLoader
+from loader.DataPreprocessor import DataPreprocessor
 from loader.SheetData import SheetData
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-
-# TODO: Preprocess Sheets to remove all hidden rows and columns
-#       The Chair Annotations are based on csv's, which do not contain hidden cols/rows. This means that
-#       we have to handle hidden rows/cols somehow.
-#       There are multiple possible solutions:
-#       1. Work on the csv files, by turning them into xls again. Easiest solution, requires little work
-#           Problem: width and height are lost, which are required for certain metrics
-#       2. Remove hidden rows/cols from the xls, by shifting data. Supported by openpyxl
-#           Problem: Shifts only data, not formatting width and height are now wrongly assigned.
-#       3. I rewrote the annotation preprocessor to skip over hidden rows and columns,
-#           by creating a list of unhidden col_letters and unhidden row_indices, which I then can access with the
-#           annotation coordinates
-#           Problem: As label regions still have to be merged, it would require a major refactor
-#           to enable label regions to span over hidden rows/columns.
 
 
 # TODO: Investigate, what is running so long with huge files, and think to either remove or document skipping of huge files!
@@ -40,8 +24,6 @@ class Dataset(object):
         self.path = path
         self.name = name
         self.label_region_loader = label_region_loader
-        self.file_size_cap = 1000 * 100  # 100 kb
-        self.cap_file_size = True
         self.annotations_file_name = annotations_file_name
 
     @cached_property
@@ -51,85 +33,30 @@ class Dataset(object):
             data = f.read()
         return json.loads(data)
 
-    def _get_sheet_annotations(self, xls_name, sheetname):
-        annotations_key = xls_name + '_' + sheetname + '.csv'
-        return self._annotations[annotations_key]
-
-    def _get_xls_file_paths(self, exceptions: List[str] = None):
-        xls_file_directory = join(self.path, "xls")
-        xls_files = sorted(
-            [xls_file for xls_file in listdir(xls_file_directory) if isfile(join(xls_file_directory, xls_file))])
-
-        if exceptions is not None:
-            xls_files = [f for f in xls_files if f not in exceptions]
-
-        return [
-            join(xls_file_directory, xls_file)
-            for xls_file in xls_files
-            if self.cap_file_size is False or getsize(join(xls_file_directory, xls_file)) < self.file_size_cap
-        ]
-
-    @staticmethod
-    def worksheet_contains_hidden(worksheet: Worksheet):
-        hidden_cols = [dim for _, dim in worksheet.column_dimensions.items() if dim.hidden is True]
-        hidden_rows = [dim for _, dim in worksheet.row_dimensions.items() if dim.hidden is True]
-        if len(hidden_cols) > 0 or len(hidden_rows) > 0:
-            # Contains hidden
-            return True
-        return False
-
-    @staticmethod
-    def _get_workbooks(xls_file_paths: List[str]):
-        """Generator for all Workbook Objects"""
-        for i, xls_path in enumerate(xls_file_paths):
-            try:
-                wb = load_workbook(xls_path)
-            except:
-                # Something went wrong with loading the workbook, log and skip
-                logger.warning(f"Could not load workbook {xls_path}")
-                continue
-            wb.path = xls_path  # Path is wrongly defaulted to /xl/workbook.xml
-            logger.debug(f"Loading workbook {i}/{len(xls_file_paths)}: {xls_path}")
-            yield wb
+    @property
+    def sheet_data_count(self):
+        return len(self._annotations.keys())
 
     def get_sheet_data(self, exceptions: List[str] = None) -> Generator[SheetData, None, None]:
         """Generator for all Sheet Data Objects"""
-        for workbook in Dataset._get_workbooks(self._get_xls_file_paths(exceptions)):
-            for sheet in workbook:
-                if Dataset.worksheet_contains_hidden(sheet):
-                    logger.debug(
-                        f"The sheet {sheet.title} of workbook {workbook.path} contains hidden cols or rows, which we cant handle yet!")
-                    continue
-                wb_path = sheet.parent.path
-                xls_file_name = split(wb_path)[1]
-                try:
-                    sheet_annotations = self._get_sheet_annotations(xls_file_name, sheet.title)
-                except KeyError:
-                    # No annotation for this sheet exists (probably empty or a graph)
-                    logger.debug(f"\tNo Annotation found for {sheet.title} of {workbook.path}")
-                    continue
+        for key in self._annotations.keys():
+            if key in exceptions:
+                continue
+            yield self.get_specific_sheetdata(key)
 
-                logger.info(f"\tLoading sheet {sheet.title} of {workbook.path}")
-                label_regions, table_definitions = self.label_region_loader.preprocess_annotations(
-                    sheet,
-                    sheet_annotations,
-                )
-                yield SheetData(sheet, label_regions, table_definitions)
-
-    def get_specific_sheetdata(self, xls_file: str, sheet_name: str) -> SheetData:
-        xls_file_path = join(self.path, "xls", xls_file)
+    def get_specific_sheetdata(self, key: str) -> SheetData:
+        xls_file_name, sheet_name = DataPreprocessor.split_annotation_key(key)
+        xls_file_path = join(self.path, "xls", xls_file_name)
         wb = load_workbook(xls_file_path)
-
         wb.path = xls_file_path  # Path is wrongly defaulted to /xl/workbook.xml
-        sheet = wb[sheet_name]
-        if Dataset.worksheet_contains_hidden(sheet):
-            raise NotImplementedError("This sheet contains hidden cols or rows, which we cant handle yet!")
-        sheet_annotations = self._get_sheet_annotations(xls_file, sheet.title)
-        label_regions, table_definitions = self.label_region_loader.preprocess_annotations(
-            sheet,
+        ws = wb[sheet_name]
+
+        sheet_annotations = self._annotations[key]
+        label_regions, table_definitions = self.label_region_loader.load_label_regions_and_table_definitions(
+            ws,
             sheet_annotations,
         )
-        return SheetData(sheet, label_regions, table_definitions)
+        return SheetData(ws, label_regions, table_definitions)
 
     def summarize(self):
         """Summarizes Dataset Annotations"""

@@ -1,4 +1,5 @@
 """Object containing a Worksheet Object, Label Regions and the Table Definition Ground Truth and the """
+from os.path import basename
 from typing import List
 
 from openpyxl.worksheet.worksheet import Worksheet
@@ -12,6 +13,10 @@ class SheetData(object):
         self.worksheet = worksheet
         self.label_regions = label_regions
         self.table_definitions = table_definitions
+
+    @property
+    def annotation_key(self):
+        return f"{basename(self.parent_path)}_{self.worksheet.title}.csv"
 
     @property
     def parent_path(self):

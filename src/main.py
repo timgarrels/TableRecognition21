@@ -2,10 +2,10 @@ import logging
 from os import getcwd
 from os.path import join
 
+from experiments.NoTrainingNoSeed import NoTrainingNoSeed
 from labelregions.LabelRegionLoader import LabelRegionLoader
 from loader.DataPreprocessor import DataPreprocessor
 from loader.Dataset import Dataset
-from visualization.SheetDataVisualization import visualize_sheet_data
 
 logging.basicConfig(level=logging.INFO)
 
@@ -21,11 +21,10 @@ def main():
     data_preprocessor.preprocess()
 
     label_region_loader = LabelRegionLoader()
-    DECO_pre = Dataset(join(DATA_DIR, "Deco"), "Deco", label_region_loader)
-    DECO = Dataset(join(DATA_DIR, "Deco"), "Deco", label_region_loader, "annotations_elements.json")
+    DECO = Dataset(join(DATA_DIR, "Deco"), "Deco", label_region_loader)
 
-    sd = DECO_pre.get_specific_sheetdata("andrea_ring__3__HHmonthlyavg.xlsx", "Monthly HH Flows")
-    visualize_sheet_data(sd, "new_preproc.xlsx")
+    experiment = NoTrainingNoSeed(DECO, OUTPUT_DIR)
+    experiment.start()
 
 
 if __name__ == "__main__":
