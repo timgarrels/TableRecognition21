@@ -5,8 +5,8 @@ from labelregions.BoundingBox import BoundingBox
 
 def table_overlap(ground_truth_table: BoundingBox, detected_table: BoundingBox):
     """See Table Detection in Heterogeneous Documents 4., eq. 1"""
-    cells = ground_truth_table.intersection(detected_table)
-    return (2 * len(cells)) / (ground_truth_table.area + detected_table.area)
+    overlap = ground_truth_table.intersection(detected_table)
+    return (2 * overlap) / (ground_truth_table.area + detected_table.area)
 
 
 def detection_evaluation(ground_truth_tables: List[BoundingBox], detected_tables: List[BoundingBox]):

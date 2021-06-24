@@ -17,11 +17,23 @@ class BoundingBox(object):
 
     def intersect(self, box: BoundingBox):
         """Returns whether two bounding boxes intersect"""
-        return len(self.intersection(box)) > 0
+        box_left_of_self = box.right < self.left
+        self_left_of_box = self.right < box.left
+        intersect_on_y = not box_left_of_self and not self_left_of_box
+
+        box_top_of_self = box.bottom < self.top
+        self_top_of_box = self.bottom < box.top
+        intersect_on_x = not box_top_of_self and not self_top_of_box
+
+        return intersect_on_x and intersect_on_y
 
     def intersection(self, box: BoundingBox):
-        """Returns the cells that are present in both this and the given box"""
-        return set(self.cells()).intersection(box.cells())
+        """Returns the area of overlap between this and the given box"""
+        if not self.intersect(box):
+            return 0
+        dx = min(self.right, box.right) - max(self.left, box.left) + 1
+        dy = min(self.bottom, box.bottom) - max(self.top, box.top) + 1
+        return dx * dy
 
     def cells(self):
         return list(product(self.get_all_x(), self.get_all_y()))

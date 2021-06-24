@@ -30,8 +30,8 @@ class CrossValidationTraining(object):
         makedirs(self._out_path, exist_ok=True)
 
         self._weight_tuning_rounds = weight_tuning_rounds
-        self._training_pool = ThreadPool(self._weight_tuning_rounds)
         self._search_rounds = search_rounds
+        self._thread_pool = ThreadPool(max(self._weight_tuning_rounds, self._search_rounds))
 
     def start(self):
         """Runs a cross validation training"""
@@ -78,8 +78,8 @@ class CrossValidationTraining(object):
         """Evaluates on fold of the cross validation, returns the accuracy per file of the fold"""
         # Train multiple rounds
         logger.info("Training Rounds:")
-        weights_and_errors = self._training_pool.map(lambda i: self.train(fold["train"], fold_num, i),
-                                                     range(self._weight_tuning_rounds))
+        weights_and_errors = self._thread_pool.map(lambda i: self.train(fold["train"], fold_num, i),
+                                                   range(self._weight_tuning_rounds))
         weights = CrossValidationTraining.weighted_average(weights_and_errors)
 
         self.dump(
@@ -183,7 +183,7 @@ class CrossValidationTraining(object):
         recognized_tables = []
         for table in ground_truth:
             for computed_table in computed_result:
-                cells_in_common = len(table.intersection(computed_table))
+                cells_in_common = table.intersection(computed_table)
                 cells_in_union = table.area + computed_table.area - cells_in_common
                 jacard_index = cells_in_common / cells_in_union
                 if jacard_index >= 0.9:
@@ -209,11 +209,12 @@ class CrossValidationTraining(object):
             rater,
             GeneticSearchConfiguration(sheet_graph),
         )
-        accuracies = []
-        for _ in range(self._search_rounds):
-            result = search.run()
-            accuracy = CrossValidationTraining.accuracy_of_result(ground_truth, result.get_table_definitions())
-            accuracies.append(accuracy)
+
+        results = self._thread_pool.map(lambda x: search.run(), range(self._search_rounds))
+        accuracies = [
+            CrossValidationTraining.accuracy_of_result(ground_truth, result.get_table_definitions())
+            for result in results
+        ]
 
         return sum(accuracies) / len(accuracies)
 

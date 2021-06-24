@@ -39,7 +39,7 @@ class FitnessRater(object):
             component: GraphComponentData,
             metric: Callable[[GraphComponentData], float],
     ) -> float:
-        component_id = component.id()
+        component_id = component.id
         metric_name = metric.__name__
 
         if self._score_cache.get(sheet, None) is None:
@@ -200,13 +200,13 @@ class FitnessRater(object):
         # Warning: This metric is really weird, as they use
         # len(cols_of_all_lrs) * len(rows_of_all_lrs) of all divisor, which does not make sense to me
         overlap = 0
-        cols_of_all_lrs = set()
-        rows_of_all_lrs = set()
+        cols_of_all_lrs = []
+        rows_of_all_lrs = []
         for i in range(len(components)):
             c_i = set(components[i].bounding_box.get_all_x())
-            cols_of_all_lrs = cols_of_all_lrs.union(c_i)
+            cols_of_all_lrs.extend(c_i)
             r_i = set(components[i].bounding_box.get_all_y())
-            rows_of_all_lrs = rows_of_all_lrs.union(r_i)
+            rows_of_all_lrs.extend(r_i)
             for j in range(len(components)):
                 if j <= i:
                     continue
@@ -214,7 +214,7 @@ class FitnessRater(object):
                 r_j = components[j].bounding_box.get_all_y()
 
                 overlap += len(c_i.intersection(c_j)) * len(r_i.intersection(r_j))
-        return overlap / (len(cols_of_all_lrs) * len(rows_of_all_lrs))
+        return overlap / (len(set(cols_of_all_lrs)) * len(set(rows_of_all_lrs)))
 
     def rate(self, graph: SpreadSheetGraph, edge_toggle_list: List[bool]) -> float:
         """Rates a graph based on a edge toggle list"""

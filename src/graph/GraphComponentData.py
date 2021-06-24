@@ -1,5 +1,6 @@
 """Class to represent a Graph Component, used to get attributes/data and cache them"""
 import logging
+from functools import cached_property
 from itertools import chain
 from typing import List
 
@@ -198,6 +199,7 @@ class GraphComponentData(object):
     def __str__(self):
         return "Component(" + ",".join([str(lr) for lr in self.label_regions]) + ")"
 
+    @cached_property
     def id(self):
         """An id that can be used to cache scores of a rater for this component
         The components rating is not dependent on the self.graph property
