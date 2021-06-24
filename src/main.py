@@ -2,7 +2,7 @@ import logging
 from os import getcwd
 from os.path import join
 
-from experiments.NoTrainingNoSeed import NoTrainingNoSeed
+from experiments.CrossValidationTraining import CrossValidationTraining
 from labelregions.LabelRegionLoader import LabelRegionLoader
 from loader.DataPreprocessor import DataPreprocessor
 from loader.Dataset import Dataset
@@ -21,9 +21,9 @@ def main():
     data_preprocessor.preprocess()
 
     label_region_loader = LabelRegionLoader()
-    DECO = Dataset(join(DATA_DIR, "Deco"), "Deco", label_region_loader)
+    TEST = Dataset(join(DATA_DIR, "Test"), "Test", label_region_loader)
 
-    experiment = NoTrainingNoSeed(DECO, OUTPUT_DIR)
+    experiment = CrossValidationTraining(2, TEST, OUTPUT_DIR, weight_tuning_rounds=2)
     experiment.start()
 
 

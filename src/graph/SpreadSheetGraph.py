@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 class SpreadSheetGraph(object):
     def __init__(self, sheetdata: SheetData):
+        self.sheet_data = sheetdata
         self.nodes: List[LabelRegion] = sheetdata.label_regions
         self.node_id_lookup: Dict[int, LabelRegion] = dict([(node.id, node) for node in self.nodes])
         self.edge_list: List[Edge] = self.get_generate_edge_list()
