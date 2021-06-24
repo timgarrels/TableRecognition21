@@ -12,7 +12,7 @@ from labelregions.LabelRegionType import LabelRegionType
 logger = logging.getLogger(__name__)
 
 
-class AnnotationPreprocessor(object):
+class LabelRegionLoader(object):
     def __init__(self, remove_empty_cells=True, introduce_noise=False):
         self.remove_empty_cells = remove_empty_cells
         self.introduce_noise = introduce_noise
@@ -20,25 +20,12 @@ class AnnotationPreprocessor(object):
         self._worksheet = None
 
     @staticmethod
-    def _flatten_and_rewrite_label_regions(table_annotations):
-        """Flattens the LR element list and clears/replaces labels to
-        fit the table model (Header, Data).
-        Returns a dict mapping each labale region name to its data dict"""
-        # Flatten annotated regions, as we dont want the table ground truth data
+    def _flatten_label_regions(table_annotations):
+        """Flattens the LR element list
+        Returns a dict mapping each label region name to its data dict"""
         label_regions = []
         for table_annotation in table_annotations:
             label_regions.extend(table_annotation["elements"])
-
-        # Filter / rename specific labels
-        # Drop MetaTitles
-        filtered_types = ["MetaTitle", "Notes", "Other"]
-        label_regions = [lr for lr in label_regions if lr["type"] not in filtered_types]
-        # Set Derived = Data and GroupHead = Header
-        for lr in label_regions:
-            if lr["type"] == "Derived":
-                lr["type"] = "Data"
-            if lr["type"] == "GroupHead":
-                lr["type"] = "Header"
 
         label_regions_dict = {}
         for lr in label_regions:
@@ -182,16 +169,6 @@ class AnnotationPreprocessor(object):
             lrs.append(LabelRegion(lr_id, LabelRegionType(lr_type), top, left, bottom, right))
         return lrs
 
-    @staticmethod
-    def _get_table_definitions(annotation: Dict) -> List[BoundingBox]:
-        table_definitions = []
-        for region in annotation["regions"]:
-            if region["region_type"] == "Table":
-                left, top = region["top_lx"]
-                right, bottom = region["bot_rx"]
-                table_definitions.append(BoundingBox(top + 1, left + 1, bottom + 1, right + 1))
-        return table_definitions
-
     def _introduce_noise(self, cell_rows: List):
         """Relabels or omits cells"""
         # Create index map
@@ -234,8 +211,8 @@ class AnnotationPreprocessor(object):
             right, bottom = table_annotation["bot_rx"]
             table_definitions.append(BoundingBox(top + 1, left + 1, bottom + 1, right + 1))
 
-        logger.debug("Rewriting Chair Label Regions...")
-        flattend_lrs = self._flatten_and_rewrite_label_regions(table_annotations)
+        logger.debug("Flattening Label Regions...")
+        flattend_lrs = self._flatten_label_regions(table_annotations)
         logger.debug("Splitting Chair Label Regions into Cells...")
         cell_rows = self._split_lrs_into_cells(flattend_lrs)
 

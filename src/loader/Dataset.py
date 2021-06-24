@@ -8,7 +8,7 @@ from typing import Generator, List
 from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-from labelregions.AnnotationPreprocessor import AnnotationPreprocessor
+from labelregions.LabelRegionLoader import LabelRegionLoader
 from loader.SheetData import SheetData
 
 logger = logging.getLogger(__name__)
@@ -35,16 +35,18 @@ logger.setLevel(logging.INFO)
 # TODO: Improve logging of skipped wb & sheets, so the reasons are transparent, uniformly logged and in the same place, maybe introduce custom exceptions for that
 
 class Dataset(object):
-    def __init__(self, path, name, annotation_preprocessor: AnnotationPreprocessor):
+    def __init__(self, path, name, label_region_loader: LabelRegionLoader,
+                 annotations_file_name="preprocessed_annotations_elements.json"):
         self.path = path
         self.name = name
-        self.annotation_preprocessor = annotation_preprocessor
+        self.label_region_loader = label_region_loader
         self.file_size_cap = 1000 * 100  # 100 kb
         self.cap_file_size = True
+        self.annotations_file_name = annotations_file_name
 
     @cached_property
     def _annotations(self):
-        annotation_file = join(self.path, "annotations_elements.json")
+        annotation_file = join(self.path, self.annotations_file_name)
         with open(annotation_file) as f:
             data = f.read()
         return json.loads(data)
@@ -108,7 +110,7 @@ class Dataset(object):
                     continue
 
                 logger.info(f"\tLoading sheet {sheet.title} of {workbook.path}")
-                label_regions, table_definitions = self.annotation_preprocessor.preprocess_annotations(
+                label_regions, table_definitions = self.label_region_loader.preprocess_annotations(
                     sheet,
                     sheet_annotations,
                 )
@@ -123,7 +125,7 @@ class Dataset(object):
         if Dataset.worksheet_contains_hidden(sheet):
             raise NotImplementedError("This sheet contains hidden cols or rows, which we cant handle yet!")
         sheet_annotations = self._get_sheet_annotations(xls_file, sheet.title)
-        label_regions, table_definitions = self.annotation_preprocessor.preprocess_annotations(
+        label_regions, table_definitions = self.label_region_loader.preprocess_annotations(
             sheet,
             sheet_annotations,
         )

@@ -14,11 +14,11 @@ logger.setLevel(logging.INFO)
 class Experiment(ABC):
     def __init__(self, dataset: Dataset, output_dir: str):
         self._dataset = dataset
-        if self._dataset.annotation_preprocessor.introduce_noise != self.expect_noise:
+        if self._dataset.label_region_loader.introduce_noise != self.expect_noise:
             raise ValueError(
                 f"This experiment ('{self.__class__.__name__}') expects noise={self.expect_noise}"
                 f", but the dataset uses a preprocessor with noise="
-                f"{self._dataset.annotation_preprocessor.introduce_noise}")
+                f"{self._dataset.label_region_loader.introduce_noise}")
 
         self._output_dir = join(output_dir, dataset.name, self.__class__.__name__)
 
