@@ -5,8 +5,8 @@ from os.path import join, split, exists
 from shutil import rmtree
 from typing import List
 
+from dataset.SheetData import SheetData
 from graph.SpreadSheetGraph import SpreadSheetGraph
-from loader.SheetData import SheetData
 from rater.AccuracyRater import detection_evaluation, area_precision_and_recall
 from rater.FitnessRater import FitnessRater
 from search.ExhaustiveSearch import ExhaustiveSearch

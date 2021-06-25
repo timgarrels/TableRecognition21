@@ -4,10 +4,10 @@ from typing import List, Dict, Set
 
 from openpyxl.worksheet.worksheet import Worksheet
 
+from dataset.SheetData import SheetData
 from graph.Edge import Edge, AlignmentType
 from labelregions.BoundingBox import BoundingBox
 from labelregions.LabelRegion import LabelRegion
-from loader.SheetData import SheetData
 
 logger = logging.getLogger(__name__)
 

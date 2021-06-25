@@ -8,9 +8,9 @@ from numpy import array_split
 from scipy.optimize import minimize, Bounds
 from tqdm import tqdm
 
+from dataset.Dataset import Dataset
 from graph.SpreadSheetGraph import SpreadSheetGraph
 from labelregions.BoundingBox import BoundingBox
-from loader.Dataset import Dataset
 from rater.FitnessRater import FitnessRater
 from search.ExhaustiveSearch import ExhaustiveSearch
 from search.GeneticSearch import GeneticSearch

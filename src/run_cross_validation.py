@@ -3,10 +3,10 @@ import logging
 from os import getcwd
 from os.path import join
 
+from dataset.DataPreprocessor import DataPreprocessor
+from dataset.Dataset import Dataset
 from experiments.CrossValidationTraining import CrossValidationTraining
 from labelregions.LabelRegionLoader import LabelRegionLoader
-from loader.DataPreprocessor import DataPreprocessor
-from loader.Dataset import Dataset
 
 logging.basicConfig(level=logging.INFO)
 

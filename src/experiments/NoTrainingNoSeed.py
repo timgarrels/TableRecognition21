@@ -5,9 +5,9 @@ from os.path import join, isfile
 
 from tqdm import tqdm
 
+from dataset.Dataset import Dataset
+from dataset.SheetData import SheetData
 from graph.SpreadSheetGraph import SpreadSheetGraph
-from loader.Dataset import Dataset
-from loader.SheetData import SheetData
 from rater.AccuracyRater import detection_evaluation, area_precision_and_recall
 from rater.FitnessRater import FitnessRater
 from search.ExhaustiveSearch import ExhaustiveSearch

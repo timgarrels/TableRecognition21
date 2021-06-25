@@ -1,6 +1,6 @@
 from openpyxl import Workbook
 
-from loader.SheetData import SheetData
+from dataset.SheetData import SheetData
 from visualization.LabelRegionVisualization import add_lr_visualization_sheet
 from visualization.TableDefinitionVisualization import overlay_table_definition_visualization
 

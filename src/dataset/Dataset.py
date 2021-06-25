@@ -6,9 +6,9 @@ from typing import Generator, List
 
 from openpyxl import load_workbook
 
+from dataset.DataPreprocessor import DataPreprocessor
+from dataset.SheetData import SheetData
 from labelregions.LabelRegionLoader import LabelRegionLoader
-from loader.DataPreprocessor import DataPreprocessor
-from loader.SheetData import SheetData
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
