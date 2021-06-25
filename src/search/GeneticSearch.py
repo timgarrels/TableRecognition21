@@ -5,8 +5,8 @@ import random
 from typing import List, Tuple
 
 from graph.SpreadSheetGraph import SpreadSheetGraph
-from rater.FitnessRater import FitnessRater
 from search.AbstractSearch import AbstractSearch
+from search.FitnessRater import FitnessRater
 from search.GeneticSearchConfiguration import GeneticSearchConfiguration
 
 logger = logging.getLogger(__name__)

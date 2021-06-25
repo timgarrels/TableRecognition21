@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from graph.SpreadSheetGraph import SpreadSheetGraph
-from rater.FitnessRater import FitnessRater
+from search.FitnessRater import FitnessRater
 
 
 class AbstractSearch(ABC):

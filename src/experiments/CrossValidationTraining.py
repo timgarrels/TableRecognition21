@@ -11,8 +11,8 @@ from tqdm import tqdm
 from dataset.Dataset import Dataset
 from graph.SpreadSheetGraph import SpreadSheetGraph
 from labelregions.BoundingBox import BoundingBox
-from rater.FitnessRater import FitnessRater
 from search.ExhaustiveSearch import ExhaustiveSearch
+from search.FitnessRater import FitnessRater
 from search.GeneticSearch import GeneticSearch
 from search.GeneticSearchConfiguration import GeneticSearchConfiguration
 

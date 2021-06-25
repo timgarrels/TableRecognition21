@@ -7,10 +7,10 @@ from tqdm import tqdm
 
 from dataset.Dataset import Dataset
 from dataset.SheetData import SheetData
+from experiments.AccuracyRater import detection_evaluation, area_precision_and_recall
 from graph.SpreadSheetGraph import SpreadSheetGraph
-from rater.AccuracyRater import detection_evaluation, area_precision_and_recall
-from rater.FitnessRater import FitnessRater
 from search.ExhaustiveSearch import ExhaustiveSearch
+from search.FitnessRater import FitnessRater
 from search.GeneticSearch import GeneticSearch
 from search.GeneticSearchConfiguration import GeneticSearchConfiguration
 
