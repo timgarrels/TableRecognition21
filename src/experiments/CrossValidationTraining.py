@@ -1,6 +1,4 @@
 import json
-import logging
-from multiprocessing.pool import ThreadPool
 from os import makedirs
 from os.path import join
 from random import choice, shuffle
@@ -18,37 +16,60 @@ from search.ExhaustiveSearch import ExhaustiveSearch
 from search.GeneticSearch import GeneticSearch
 from search.GeneticSearchConfiguration import GeneticSearchConfiguration
 
-logger = logging.getLogger(__name__)
-
 
 class CrossValidationTraining(object):
-    def __init__(self, k: int, dataset: Dataset, out_path: str, weight_tuning_rounds=10, search_rounds=10):
-        self._k = k
+    def __init__(
+            self,
+            dataset: Dataset,
+            out_path: str,
+            k=10,
+            weight_tuning_rounds=10,
+            search_rounds=10,
+    ):
         self._dataset = dataset
 
         self._out_path = join(out_path, dataset.name, self.__class__.__name__)
         makedirs(self._out_path, exist_ok=True)
 
+        self._k = k
         self._weight_tuning_rounds = weight_tuning_rounds
         self._search_rounds = search_rounds
-        self._thread_pool = ThreadPool(max(self._weight_tuning_rounds, self._search_rounds))
+
+    def prepare(self):
+        folds = self.get_folds()
+        self.dump("folds.json", dict([(i, fold) for i, fold in enumerate(folds)]))
+
+    def pickup_fold(self, fold_num: int):
+        """Processes one single fold from earlier preparation"""
+        with open(join(self._out_path, "folds.json")) as f:
+            fold_dict = json.load(f)
+
+        fold = fold_dict[fold_num]
+        self.process_fold(fold, fold_num)
+
+    def finalize(self):
+        """Call after all folds were picked up to process the final results"""
+        fold_accuracies = []
+        for fold_num in range(self._k):
+            with open(join(self._out_path, f"fold_{fold_num}", f"fold_{fold_num}_file_accuracies.json")) as f:
+                data = json.load(f)
+            fold_accuracy = data["fold_accuracy"]
+            fold_accuracies.append(fold_accuracy)
+
+        self.dump(
+            "final_accuracy.json",
+            sum(fold_accuracies) / len(fold_accuracies),
+        )
 
     def start(self):
         """Runs a cross validation training"""
         folds = self.get_folds()
-        self.dump("folds.json", [{i: fold} for i, fold in enumerate(folds)])
+        self.dump("folds.json", dict([(i, fold) for i, fold in enumerate(folds)]))
 
-        fold_accuracies = []
-        for fold_num, fold in enumerate(folds):
-            logger.info(f"Working on fold {fold_num + 1}/{self._k}")
-            fold_file_accuracies = self.process_fold(fold, fold_num)
-            fold_accuracy = sum(fold_file_accuracies.values()) / len(fold_file_accuracies.values())
-            self.dump(
-                f"fold_{fold_num}_file_accuracies.json",
-                {"fold_file_accuracies": fold_file_accuracies, "fold_accuracy": fold_accuracy},
-                subdir=f"fold_{fold_num}",
-            )
-            fold_accuracies.append(fold_accuracy)
+        fold_accuracies = [
+            self.process_fold(fold, fold_num)
+            for fold_num, fold in tqdm(enumerate(folds), desc="Processing folds", total=len(folds))
+        ]
 
         self.dump(
             "final_accuracy.json",
@@ -74,12 +95,13 @@ class CrossValidationTraining(object):
         return [{"train": train_chunk, "test": test_chunk} for train_chunk, test_chunk in
                 zip(train_chunks, test_chunks)]
 
-    def process_fold(self, fold: Dict[str, List], fold_num: int) -> Dict[str, float]:
-        """Evaluates on fold of the cross validation, returns the accuracy per file of the fold"""
+    def process_fold(self, fold: Dict[str, List], fold_num: int) -> float:
+        """Evaluates on fold of the cross validation, returns the accuracy of the fold"""
         # Train multiple rounds
-        logger.info("Training Rounds:")
-        weights_and_errors = self._thread_pool.map(lambda i: self.train(fold["train"], fold_num, i),
-                                                   range(self._weight_tuning_rounds))
+        weights_and_errors = [
+            self.train(fold["train"], fold_num, i)
+            for i in tqdm(range(self._weight_tuning_rounds), desc="Training Rounds")
+        ]
         weights = CrossValidationTraining.weighted_average(weights_and_errors)
 
         self.dump(
@@ -88,10 +110,8 @@ class CrossValidationTraining(object):
             subdir=f"fold_{fold_num}"
         )
 
-        logger.info("Test Set Validation")
         file_accuracies = {}
-        for key in tqdm(fold["test"]):
-            logger.info(f"Processing {key}")
+        for key in tqdm(fold["test"], desc=f"Test Set Validation of fold {fold_num}"):
             sheet_data = self._dataset.get_specific_sheetdata(key)
             sheet_graph = SpreadSheetGraph(sheet_data)
             ground_truth = sheet_graph.get_table_definitions()
@@ -101,7 +121,14 @@ class CrossValidationTraining(object):
             else:
                 accuracy = self.genetic_search_accuracy(ground_truth, sheet_graph, rater)
             file_accuracies[key] = accuracy
-        return file_accuracies
+
+        fold_accuracy = sum(file_accuracies.values()) / len(file_accuracies.values())
+        self.dump(
+            f"fold_{fold_num}_file_accuracies.json",
+            {"fold_file_accuracies": file_accuracies, "fold_accuracy": fold_accuracy},
+            subdir=f"fold_{fold_num}",
+        )
+        return fold_accuracy
 
     @staticmethod
     def objective_function(weights: List[float], partitions: Dict[SpreadSheetGraph, List[List[bool]]],
@@ -114,7 +141,6 @@ class CrossValidationTraining(object):
             for alternative_toggle_list in alternative_toggle_lists:
                 alternative_partition_part = 1 + rater.rate(graph, alternative_toggle_list)
                 score += target_partition_part / alternative_partition_part
-        logger.debug(f"score: {score}, weights: {weights}")
         return score
 
     @staticmethod
@@ -210,7 +236,8 @@ class CrossValidationTraining(object):
             GeneticSearchConfiguration(sheet_graph),
         )
 
-        results = self._thread_pool.map(lambda x: search.run(), range(self._search_rounds))
+        # No multithreading to leverage cache
+        results = [search.run() for _ in range(self._search_rounds)]
         accuracies = [
             CrossValidationTraining.accuracy_of_result(ground_truth, result.get_table_definitions())
             for result in results
