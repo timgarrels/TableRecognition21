@@ -56,7 +56,6 @@ class NoTrainingNoSeed(object):
     def process(self, sheetdata: SheetData):
         """Creates ground truth and detected table definition by running just the search algorithm"""
         sheet_graph = SpreadSheetGraph(sheetdata)
-        edge_count = len(sheet_graph.edge_toggle_list)
         ground_truth = sheet_graph.get_table_definitions()
         rater = FitnessRater(self._weights)
         if len(sheet_graph.nodes) <= 10:
@@ -75,7 +74,6 @@ class NoTrainingNoSeed(object):
         detected = sheet_graph.get_table_definitions()
 
         result = {
-            "edge_count": edge_count,
             "ground_truth": [bb.__dict__() for bb in ground_truth],
             "detected": [bb.__dict__() for bb in detected],
         }

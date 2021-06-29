@@ -54,6 +54,9 @@ class Dataset(object):
             exceptions: List[str] = None,
     ) -> Generator[SheetData, None, None]:
         """Generator for all Sheet Data Objects"""
+        if exceptions is None:
+            exceptions = []
+
         for key in self._annotations.keys():
             if key in exceptions:
                 continue

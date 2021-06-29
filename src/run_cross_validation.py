@@ -6,6 +6,7 @@ from os.path import join
 
 from dataset.DataPreprocessor import DataPreprocessor
 from dataset.Dataset import Dataset
+from experiments import DataRefiner
 from experiments.CrossValidationTraining import CrossValidationTraining
 from labelregions.LabelRegionLoader import LabelRegionLoader
 
@@ -48,6 +49,8 @@ def main():
     data_preprocessor = DataPreprocessor(DATA_DIR, "preprocessed_annotations_elements.json")
     data_preprocessor.preprocess(dataset.name)
 
+    DataRefiner.refine(dataset, OUTPUT_DIR)
+    
     label_region_loader = LabelRegionLoader(introduce_noise=args.noise)
 
     experiment = CrossValidationTraining(dataset, label_region_loader, OUTPUT_DIR, threads=args.threads)
