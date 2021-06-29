@@ -19,11 +19,9 @@ logger.setLevel(logging.INFO)
 # TODO: Improve logging of skipped wb & sheets, so the reasons are transparent, uniformly logged and in the same place, maybe introduce custom exceptions for that
 
 class Dataset(object):
-    def __init__(self, path, name, label_region_loader: LabelRegionLoader,
-                 annotations_file_name="preprocessed_annotations_elements.json"):
+    def __init__(self, path, name, annotations_file_name="preprocessed_annotations_elements.json"):
         self.path = path
         self.name = name
-        self.label_region_loader = label_region_loader
         self.annotations_file_name = annotations_file_name
 
     @cached_property
@@ -50,14 +48,18 @@ class Dataset(object):
             exceptions = []
         return len(set(self._annotations.keys()).difference(exceptions))
 
-    def get_sheet_data(self, exceptions: List[str] = None) -> Generator[SheetData, None, None]:
+    def get_sheet_data(
+            self,
+            label_region_loader: LabelRegionLoader,
+            exceptions: List[str] = None,
+    ) -> Generator[SheetData, None, None]:
         """Generator for all Sheet Data Objects"""
         for key in self._annotations.keys():
             if key in exceptions:
                 continue
-            yield self.get_specific_sheetdata(key)
+            yield self.get_specific_sheetdata(key, label_region_loader)
 
-    def get_specific_sheetdata(self, key: str) -> SheetData:
+    def get_specific_sheetdata(self, key: str, label_region_loader: LabelRegionLoader) -> SheetData:
         xls_file_name, sheet_name = DataPreprocessor.split_annotation_key(key)
         xls_file_path = join(self.path, "xls", xls_file_name)
         wb = load_workbook(xls_file_path)
@@ -65,7 +67,7 @@ class Dataset(object):
         ws = wb[sheet_name]
 
         sheet_annotations = self._annotations[key]
-        label_regions, table_definitions = self.label_region_loader.load_label_regions_and_table_definitions(
+        label_regions, table_definitions = label_region_loader.load_label_regions_and_table_definitions(
             ws,
             sheet_annotations,
         )

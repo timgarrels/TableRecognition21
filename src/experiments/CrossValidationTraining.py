@@ -1,3 +1,7 @@
+"""k-fold cross validation with multiple weight tuning and genetic search rounds.
+Weights and Accuracy are averaged.
+Accuracy is measured as jacard-index >= 0.9"""
+
 import json
 from os import makedirs
 from os.path import join
@@ -11,6 +15,7 @@ from tqdm import tqdm
 from dataset.Dataset import Dataset
 from graph.SpreadSheetGraph import SpreadSheetGraph
 from labelregions.BoundingBox import BoundingBox
+from labelregions.LabelRegionLoader import LabelRegionLoader
 from search.ExhaustiveSearch import ExhaustiveSearch
 from search.FitnessRater import FitnessRater
 from search.GeneticSearch import GeneticSearch
@@ -21,12 +26,14 @@ class CrossValidationTraining(object):
     def __init__(
             self,
             dataset: Dataset,
+            label_region_loader: LabelRegionLoader,
             out_path: str,
             k=10,
             weight_tuning_rounds=10,
             search_rounds=10,
     ):
         self._dataset = dataset
+        self._label_region_loader = label_region_loader
 
         self._out_path = join(out_path, dataset.name, self.__class__.__name__)
         makedirs(self._out_path, exist_ok=True)
@@ -112,7 +119,7 @@ class CrossValidationTraining(object):
 
         file_accuracies = {}
         for key in tqdm(fold["test"], desc=f"Test Set Validation of fold {fold_num}"):
-            sheet_data = self._dataset.get_specific_sheetdata(key)
+            sheet_data = self._dataset.get_specific_sheetdata(key, self._label_region_loader)
             sheet_graph = SpreadSheetGraph(sheet_data)
             ground_truth = sheet_graph.get_table_definitions()
             rater = FitnessRater(weights)
@@ -153,7 +160,10 @@ class CrossValidationTraining(object):
 
     def train(self, train_keys: List[str], fold_num: int, training_round: int) -> Dict[str, Union[List[float], float]]:
         """Performs SQP on the given keys, outputs the resulting weights and their error rate"""
-        graphs = [SpreadSheetGraph(self._dataset.get_specific_sheetdata(key)) for key in train_keys]
+        graphs = [
+            SpreadSheetGraph(self._dataset.get_specific_sheetdata(key, self._label_region_loader))
+            for key in train_keys
+        ]
 
         partitions = {}
         for graph in graphs:

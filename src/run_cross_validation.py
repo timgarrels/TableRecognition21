@@ -16,10 +16,9 @@ logger = logging.getLogger(__name__)
 DATA_DIR = join(getcwd(), "data")
 OUTPUT_DIR = join(getcwd(), "output")
 
-label_region_loader = LabelRegionLoader()
-DECO = Dataset(join(DATA_DIR, "Deco"), "Deco", label_region_loader)
-FUSTE = Dataset(join(DATA_DIR, "FusTe"), "FusTe", label_region_loader)
-TEST = Dataset(join(DATA_DIR, "Test"), "Test", label_region_loader)
+DECO = Dataset(join(DATA_DIR, "Deco"), "Deco")
+FUSTE = Dataset(join(DATA_DIR, "FusTe"), "FusTe")
+TEST = Dataset(join(DATA_DIR, "Test"), "Test")
 
 
 def main():
@@ -35,6 +34,8 @@ def main():
     parser.add_argument("--dataset", help=f"Specify the dataset. One of {list(datasets.keys())}", required=True)
     parser.add_argument("--action", help=f"Specify the action to perform: {list(actions.keys())}", required=True)
     parser.add_argument("--fold-number", help=f"Specify fold number (only on 'run_fold_number' action", required=False)
+    parser.add_argument("--noise", default=False, action="store_true",
+                        help="Add noise while loading label regions")
     args = parser.parse_args()
 
     dataset = datasets[args.dataset]
@@ -42,7 +43,11 @@ def main():
     data_preprocessor = DataPreprocessor(DATA_DIR, "preprocessed_annotations_elements.json")
     data_preprocessor.preprocess()
 
-    experiment = CrossValidationTraining(dataset, OUTPUT_DIR)
+    label_region_loader = LabelRegionLoader(introduce_noise=args.noise)
+    output_suffix = "noise" if args.noise else "no-noise"
+
+    experiment = CrossValidationTraining(dataset, label_region_loader, join(OUTPUT_DIR, output_suffix))
+
     if args.action == "run_fold_number":
         if args.fold_number is None:
             raise ValueError("run_fold_number requires a fold number!")
