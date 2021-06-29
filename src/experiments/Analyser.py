@@ -1,24 +1,55 @@
+"""Methods to analyse detected vs ground truth results"""
+
 from typing import List, Dict
 
 from labelregions.BoundingBox import BoundingBox
 
 
-def table_overlap(ground_truth_table: BoundingBox, detected_table: BoundingBox):
+def bayesian_scores(
+        ground_truth_tables: List[BoundingBox],
+        detected_tables: List[BoundingBox],
+) -> Dict[str, float]:
+    """Calculates precision, recall and F1 score and returns a dict containing theese values"""
+    cells_in_detected_tables = []
+    for detected_table in detected_tables:
+        cells_in_detected_tables.extend(detected_table.cells())
+
+    cells_in_ground_truth_tables = []
+    for ground_truth_table in ground_truth_tables:
+        cells_in_ground_truth_tables.extend(ground_truth_table.cells())
+
+    true_positives = set(cells_in_detected_tables).intersection(cells_in_ground_truth_tables)
+
+    area_precision = len(true_positives) / len(cells_in_detected_tables)
+    area_recall = len(true_positives) / len(cells_in_ground_truth_tables)
+
+    return {
+        "area_precision": area_precision,
+        "area_recall": area_recall,
+        "area_f1": (2 * area_precision * area_recall) / (area_precision + area_recall)
+    }
+
+
+def _table_overlap(ground_truth_table: BoundingBox, detected_table: BoundingBox) -> float:
     """See Table Detection in Heterogeneous Documents 4., eq. 1"""
     overlap = ground_truth_table.intersection(detected_table)
     return (2 * overlap) / (ground_truth_table.area + detected_table.area)
 
 
-def detection_evaluation(ground_truth_tables: List[BoundingBox], detected_tables: List[BoundingBox]):
+def detection_evaluation(
+        ground_truth_tables: List[BoundingBox],
+        detected_tables: List[BoundingBox],
+) -> Dict[str, int]:
     """See Table Detection in Heterogeneous Documents 4."""
-    ground_truth_overlap_to_detected: Dict[BoundingBox, Dict[BoundingBox, float]] = {}.fromkeys(ground_truth_tables, {})
+    ground_truth_overlap_to_detected: Dict[BoundingBox, Dict[BoundingBox, float]] = {}.fromkeys(ground_truth_tables,
+                                                                                                {})
     detected_overlap_to_ground_truth: Dict[BoundingBox, Dict[BoundingBox, float]] = {}.fromkeys(detected_tables, {})
 
     # Create an overlap lookup in both directions
     # ground_truth -> detected & overlap, detected -> ground_truth & overlap
     for ground_truth_table in ground_truth_tables:
         for detected_table in detected_tables:
-            overlap = table_overlap(ground_truth_table, detected_table)
+            overlap = _table_overlap(ground_truth_table, detected_table)
             ground_truth_overlap_to_detected[ground_truth_table][detected_table] = overlap
             detected_overlap_to_ground_truth[detected_table][ground_truth_table] = overlap
 
@@ -72,21 +103,15 @@ def detection_evaluation(ground_truth_tables: List[BoundingBox], detected_tables
     }
 
 
-def area_precision_and_recall(ground_truth_tables: List[BoundingBox], detected_tables: List[BoundingBox]):
-    cells_in_detected_tables = []
-    for detected_table in detected_tables:
-        cells_in_detected_tables.extend(detected_table.cells())
-
-    cells_in_ground_truth_tables = []
-    for ground_truth_table in ground_truth_tables:
-        cells_in_ground_truth_tables.extend(ground_truth_table.cells())
-
-    true_positives = set(cells_in_detected_tables).intersection(cells_in_ground_truth_tables)
-    area_precision = len(true_positives) / len(cells_in_detected_tables)
-
-    area_recall = len(true_positives) / len(cells_in_ground_truth_tables)
-
-    return {
-        "area_precision": area_precision,
-        "area_recall": area_recall,
-    }
+def accuracy_based_on_jacard_index(ground_truth: List[BoundingBox],
+                                   computed_result: List[BoundingBox]) -> float:
+    """Percent of recognized tables as proposed in the paper Section V.D, based on the jacard index"""
+    recognized_tables = []
+    for table in ground_truth:
+        for computed_table in computed_result:
+            cells_in_common = table.intersection(computed_table)
+            cells_in_union = table.area + computed_table.area - cells_in_common
+            jacard_index = cells_in_common / cells_in_union
+            if jacard_index >= 0.9:
+                recognized_tables.append(table)
+    return len(recognized_tables) / len(ground_truth)

@@ -15,6 +15,7 @@ from scipy.optimize import minimize, Bounds
 from tqdm import tqdm
 
 from dataset.Dataset import Dataset
+from experiments import Analyser
 from graph.SpreadSheetGraph import SpreadSheetGraph
 from labelregions.BoundingBox import BoundingBox
 from labelregions.LabelRegionLoader import LabelRegionLoader
@@ -210,19 +211,6 @@ class CrossValidationTraining(object):
         return {"weights": weights, "error_rate": better_than_original_alternative_count / total_alternative_count}
 
     @staticmethod
-    def accuracy_of_result(ground_truth: List[BoundingBox], computed_result: List[BoundingBox]) -> float:
-        """Percent of recognized tables as proposed in the paper Section V.D, based on the jacard index"""
-        recognized_tables = []
-        for table in ground_truth:
-            for computed_table in computed_result:
-                cells_in_common = table.intersection(computed_table)
-                cells_in_union = table.area + computed_table.area - cells_in_common
-                jacard_index = cells_in_common / cells_in_union
-                if jacard_index >= 0.9:
-                    recognized_tables.append(table)
-        return len(recognized_tables) / len(ground_truth)
-
-    @staticmethod
     def exhaustive_search_accuracy(ground_truth: List[BoundingBox], sheet_graph: SpreadSheetGraph,
                                    rater: FitnessRater):
         """Runs an exhaustive search, evaluates the result against the ground truth, and returns the accuracy score"""
@@ -231,7 +219,7 @@ class CrossValidationTraining(object):
             rater,
         )
         result = search.run()
-        return CrossValidationTraining.accuracy_of_result(ground_truth, result.get_table_definitions())
+        return Analyser.accuracy_based_on_jacard_index(ground_truth, result.get_table_definitions())
 
     def genetic_search_accuracy(self, ground_truth: List[BoundingBox], sheet_graph: SpreadSheetGraph,
                                 rater: FitnessRater):
@@ -245,7 +233,7 @@ class CrossValidationTraining(object):
         # No multithreading to leverage cache
         results = [search.run() for _ in range(self._search_rounds)]
         accuracies = [
-            CrossValidationTraining.accuracy_of_result(ground_truth, result.get_table_definitions())
+            Analyser.accuracy_based_on_jacard_index(ground_truth, result.get_table_definitions())
             for result in results
         ]
 
