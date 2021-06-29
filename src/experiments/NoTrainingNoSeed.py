@@ -7,7 +7,6 @@ from tqdm import tqdm
 
 from dataset.Dataset import Dataset
 from dataset.SheetData import SheetData
-from experiments.AccuracyRater import detection_evaluation, area_precision_and_recall
 from graph.SpreadSheetGraph import SpreadSheetGraph
 from search.ExhaustiveSearch import ExhaustiveSearch
 from search.FitnessRater import FitnessRater
@@ -69,12 +68,8 @@ class NoTrainingNoSeed(object):
             )
         sheet_graph = search.run()
         detected = sheet_graph.get_table_definitions()
-        eval_dict = detection_evaluation(ground_truth, detected)
-        precision_recall_dict = area_precision_and_recall(ground_truth, detected)
-        all_eval_results = {**eval_dict, **precision_recall_dict}
 
         result = {
-            "evaluation": all_eval_results,
             "edge_count": edge_count,
             "ground_truth": [bb.__dict__() for bb in ground_truth],
             "detected": [bb.__dict__() for bb in detected],
