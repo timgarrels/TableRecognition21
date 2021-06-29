@@ -9,7 +9,7 @@ from dataset.Dataset import Dataset
 from dataset.SheetData import SheetData
 from graph.SpreadSheetGraph import SpreadSheetGraph
 from search.ExhaustiveSearch import ExhaustiveSearch
-from search.FitnessRater import FitnessRater
+from search.FitnessRater import FitnessRater, get_initial_weights, weight_vector_length
 from search.GeneticSearch import GeneticSearch
 from search.GeneticSearchConfiguration import GeneticSearchConfiguration
 
@@ -18,12 +18,15 @@ logger.setLevel(logging.INFO)
 
 
 class NoTrainingNoSeed(object):
-    def __init__(self, dataset: Dataset, output_dir: str):
+    def __init__(self, dataset: Dataset, output_dir: str, weights: List[int] = None):
+        if weights is None:
+            weights = get_initial_weights()
+
+        if len(weights) != weight_vector_length():
+            raise ValueError("Weight Vector does not have the correct size!")
+
         self._dataset = dataset
-        if self._dataset.label_region_loader.introduce_noise:
-            raise ValueError(
-                f"This experiment does not expect noise, but the dataset uses a preprocessor with noise="
-                f"{self._dataset.label_region_loader.introduce_noise}")
+        self._weights = weights
 
         self._output_dir = join(output_dir, dataset.name, self.__class__.__name__)
 
@@ -49,11 +52,10 @@ class NoTrainingNoSeed(object):
     @staticmethod
     def process(sheetdata: SheetData):
         """Creates ground truth and detected table definition by running just the search algorithm"""
-        weights = [1.0 for _ in range(10)]
         sheet_graph = SpreadSheetGraph(sheetdata)
         edge_count = len(sheet_graph.edge_toggle_list)
         ground_truth = sheet_graph.get_table_definitions()
-        rater = FitnessRater(weights)
+        rater = FitnessRater(self._weights)
         if len(sheet_graph.nodes) <= 10:
             # Less than 11 nodes, do exhaustive search
             search = ExhaustiveSearch(

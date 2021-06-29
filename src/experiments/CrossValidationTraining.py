@@ -19,7 +19,7 @@ from graph.SpreadSheetGraph import SpreadSheetGraph
 from labelregions.BoundingBox import BoundingBox
 from labelregions.LabelRegionLoader import LabelRegionLoader
 from search.ExhaustiveSearch import ExhaustiveSearch
-from search.FitnessRater import FitnessRater
+from search.FitnessRater import FitnessRater, get_initial_weights
 from search.GeneticSearch import GeneticSearch
 from search.GeneticSearchConfiguration import GeneticSearchConfiguration
 
@@ -167,7 +167,7 @@ class CrossValidationTraining(object):
             subdir=join(f"fold_{fold_num}", "training")
         )
 
-        initial_weights = [1 for _ in range(10)]
+        initial_weights = get_initial_weights()
         # Create rater object outside to leverage caching
         rater = FitnessRater(initial_weights)
 

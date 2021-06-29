@@ -206,6 +206,16 @@ PARTITION_BASED_METRICS: List[Callable[[List[GraphComponentData]], float]] = [
 ]
 
 
+def weight_vector_length():
+    """Returns the necessary length for a weight vector"""
+    return len(COMPONENT_BASED_METRICS) + len(PARTITION_BASED_METRICS)
+
+
+def get_initial_weights():
+    """Return a weight vector with all ones"""
+    return [1 for _ in range(weight_vector_length())]
+
+
 def weight_lookup(weights):
     lookup = {}
     for i, metric in enumerate(COMPONENT_BASED_METRICS):
