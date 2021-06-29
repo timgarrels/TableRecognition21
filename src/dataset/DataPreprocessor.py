@@ -1,8 +1,7 @@
 """Drops sheets with hidden rows/cols and sheets that are too large from the annotations"""
 import json
 import logging
-import os
-from os.path import isdir, join, getsize, exists
+from os.path import join, getsize, exists
 from typing import Dict
 
 from openpyxl import load_workbook
@@ -34,49 +33,53 @@ class DataPreprocessor(object):
         self.remove_hidden = remove_hidden
         self.file_size_cap = file_size_cap
 
-    def preprocess(self):
-        dirs = [d for d in os.listdir(self.data_path) if isdir(join(self.data_path, d))]
-        for data_dir in dirs:
-            logger.info(f"Working on {data_dir}")
-            annotation_file_path = join(self.data_path, data_dir, "annotations_elements.json")
-            preprocessed_annotation_file_path = join(self.data_path, data_dir, self.preprocessed_annotation_file_name)
-            xls_dir_path = join(self.data_path, data_dir, "xls")
+    def preprocess(self, dataset_name: str):
+        """Remove files that are too large, not loadable or contain hidden rows/cols.
+        Rewrite the annotations of these files to only contain table annotations
+        with label regions of the correct type"""
+        annotation_file_path = join(self.data_path, dataset_name, "annotations_elements.json")
+        preprocessed_annotation_file_path = join(self.data_path, dataset_name, self.preprocessed_annotation_file_name)
+        xls_dir_path = join(self.data_path, dataset_name, "xls")
 
-            # Skip if already preprocessed
-            if exists(preprocessed_annotation_file_path):
+        # Skip if already preprocessed
+        if exists(preprocessed_annotation_file_path):
+            logger.info(f"Already preprocessed {dataset_name}")
+            return
+        logger.info(f"Working on {dataset_name}")
+
+        with open(annotation_file_path) as f:
+            annotations = json.load(f)
+        new_annotations = {}
+
+        for key in tqdm(annotations.keys()):
+            xls_file_name, sheet_name = DataPreprocessor.split_annotation_key(key)
+
+            xls_file_path = join(xls_dir_path, xls_file_name)
+
+            # Skip if too large
+            if getsize(xls_file_path) > self.file_size_cap:
                 continue
 
-            with open(annotation_file_path) as f:
-                annotations = json.load(f)
-            new_annotations = {}
+            # Skip if not loadable
+            try:
+                wb = load_workbook(xls_file_path)
+            except Exception as e:
+                # Explicit catch all, as we dont know what can gpo wrong with loading a workbook
+                # Does not catch KeyboardInterrupt and SystemExit
+                # Something went wrong with loading the workbook, log and skip
+                logger.warning(f"Could not load workbook {xls_file_path}")
+                continue
 
-            for key in tqdm(annotations.keys()):
-                xls_file_name, sheet_name = DataPreprocessor.split_annotation_key(key)
+            # Skip is sheet contains hidden rows/cols
+            ws = wb[sheet_name]
+            if DataPreprocessor.worksheet_contains_hidden(ws):
+                continue
 
-                xls_file_path = join(xls_dir_path, xls_file_name)
-
-                # Skip if too large
-                if getsize(xls_file_path) > self.file_size_cap:
-                    continue
-
-                # Skip if not loadable
-                try:
-                    wb = load_workbook(xls_file_path)
-                except:
-                    # Something went wrong with loading the workbook, log and skip
-                    logger.warning(f"Could not load workbook {xls_file_path}")
-                    continue
-
-                # Skip is sheet contains hidden rows/cols
-                ws = wb[sheet_name]
-                if DataPreprocessor.worksheet_contains_hidden(ws):
-                    continue
-
-                # Add annotation
-                new_annotations[key] = self.filter_and_rewrite_annotation(annotations[key])
-            # Write new annotations
-            with open(preprocessed_annotation_file_path, "w") as f:
-                json.dump(new_annotations, f, ensure_ascii=False, indent=4)
+            # Add annotation
+            new_annotations[key] = self.filter_and_rewrite_annotation(annotations[key])
+        # Write new annotations
+        with open(preprocessed_annotation_file_path, "w") as f:
+            json.dump(new_annotations, f, ensure_ascii=False, indent=4)
 
     @staticmethod
     def worksheet_contains_hidden(worksheet: Worksheet):

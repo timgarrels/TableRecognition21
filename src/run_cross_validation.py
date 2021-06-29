@@ -25,24 +25,19 @@ TEST = Dataset(join(DATA_DIR, "Test"), "Test")
 def main():
     datasets = dict([(ds.name, ds) for ds in [DECO, FUSTE, TEST]])
 
-    actions = {
-        "full_run": lambda ex: ex.start(),
-        "prepare": lambda ex: ex.prepare(),
-        "run_fold_number": lambda ex, num: ex.pickup_fold(num),
-        "finalize": lambda ex: ex.finalize(),
-    }
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", help=f"Specify the dataset. One of {list(datasets.keys())}", required=True)
-    parser.add_argument("--action", help=f"Specify the action to perform: {list(actions.keys())}", required=True)
-    parser.add_argument(
-        "--fold-number",
-        help=f"Specify fold number (only on 'run_fold_number' action",
-        required=False,
-        type=int,
-    )
+
+    parser.add_argument("--seed", help="Set the seed for random module", type=int)
+
+    # Experiment Configuration
     parser.add_argument("--noise", default=False, action="store_true",
                         help="Add noise while loading label regions")
-    parser.add_argument("--seed", help="Set the seed for random module", type=int)
+    parser.add_argument("--folds", help="Cross Validation Fold Count", type=int, default=10)
+    parser.add_argument("--weight-rounds", help="Weight Tuning Round Count", type=int, default=10)
+    parser.add_argument("--search-rounds", help="Genetic Search Round Count", type=int, default=10)
+    parser.add_argument("--threads", help="Set the thread count for fold parallelization", type=int, default=1)
+
     args = parser.parse_args()
 
     if args.seed is not None:
@@ -51,19 +46,12 @@ def main():
     dataset = datasets[args.dataset]
 
     data_preprocessor = DataPreprocessor(DATA_DIR, "preprocessed_annotations_elements.json")
-    data_preprocessor.preprocess()
+    data_preprocessor.preprocess(args.dataset)
 
     label_region_loader = LabelRegionLoader(introduce_noise=args.noise)
-    output_suffix = "noise" if args.noise else "no-noise"
 
-    experiment = CrossValidationTraining(dataset, label_region_loader, join(OUTPUT_DIR, output_suffix))
-
-    if args.action == "run_fold_number":
-        if args.fold_number is None:
-            raise ValueError("run_fold_number requires a fold number!")
-        actions[args.action](experiment, args.fold_number)
-    else:
-        actions[args.action](experiment)
+    experiment = CrossValidationTraining(dataset, label_region_loader, OUTPUT_DIR, threads=args.threads)
+    experiment.start()
 
 
 if __name__ == "__main__":

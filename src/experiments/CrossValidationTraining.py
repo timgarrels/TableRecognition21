@@ -3,6 +3,8 @@ Weights and Accuracy are averaged.
 Accuracy is measured as jacard-index >= 0.9"""
 
 import json
+import uuid
+from multiprocessing.pool import ThreadPool
 from os import makedirs
 from os.path import join
 from random import choice, shuffle
@@ -31,52 +33,42 @@ class CrossValidationTraining(object):
             k=10,
             weight_tuning_rounds=10,
             search_rounds=10,
+            threads=1,
     ):
         self._dataset = dataset
         self._label_region_loader = label_region_loader
 
-        self._out_path = join(out_path, dataset.name, self.__class__.__name__)
+        run_id = uuid.uuid1().hex
+        self._out_path = join(out_path, dataset.name, self.__class__.__name__, run_id)
         makedirs(self._out_path, exist_ok=True)
 
         self._k = k
         self._weight_tuning_rounds = weight_tuning_rounds
         self._search_rounds = search_rounds
 
-    def prepare(self):
-        folds = self.get_folds()
-        self.dump("folds.json", dict([(i, fold) for i, fold in enumerate(folds)]))
+        self._threads = min(threads, self._k)  # Not more threads than folds!
+        self._thread_pool = ThreadPool(self._threads)
 
-    def pickup_fold(self, fold_num: int):
-        """Processes one single fold from earlier preparation"""
-        with open(join(self._out_path, "folds.json")) as f:
-            fold_dict = json.load(f)
-
-        fold = fold_dict[fold_num]
-        self.process_fold(fold, fold_num)
-
-    def finalize(self):
-        """Call after all folds were picked up to process the final results"""
-        fold_accuracies = []
-        for fold_num in range(self._k):
-            with open(join(self._out_path, f"fold_{fold_num}", f"fold_{fold_num}_file_accuracies.json")) as f:
-                data = json.load(f)
-            fold_accuracy = data["fold_accuracy"]
-            fold_accuracies.append(fold_accuracy)
-
-        self.dump(
-            "final_accuracy.json",
-            sum(fold_accuracies) / len(fold_accuracies),
-        )
+        # Dump config
+        self.dump("config.json", {
+            "dataset": self._dataset.name,
+            "noise": self._label_region_loader.introduce_noise,
+            "k": self._k,
+            "weight_tuning_rounds": self._weight_tuning_rounds,
+            "search_rounds": self._search_rounds,
+            "threads": self._threads,
+        })
 
     def start(self):
         """Runs a cross validation training"""
         folds = self.get_folds()
         self.dump("folds.json", dict([(i, fold) for i, fold in enumerate(folds)]))
 
-        fold_accuracies = [
-            self.process_fold(fold, fold_num)
-            for fold_num, fold in tqdm(enumerate(folds), desc="Processing folds", total=len(folds))
-        ]
+        def parallel_fold_processing_wrapper(fold_num_and_fold):
+            return self.process_fold(fold_num_and_fold[1], fold_num_and_fold[0])
+
+        # Process folds in parallel
+        fold_accuracies = self._thread_pool.map(parallel_fold_processing_wrapper, enumerate(folds))
 
         self.dump(
             "final_accuracy.json",
@@ -107,7 +99,7 @@ class CrossValidationTraining(object):
         # Train multiple rounds
         weights_and_errors = [
             self.train(fold["train"], fold_num, i)
-            for i in tqdm(range(self._weight_tuning_rounds), desc="Training Rounds")
+            for i in tqdm(range(self._weight_tuning_rounds), desc=f"Training Rounds of fold {fold_num}")
         ]
         weights = CrossValidationTraining.weighted_average(weights_and_errors)
 
