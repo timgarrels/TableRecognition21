@@ -109,6 +109,10 @@ class CrossValidationTraining(object):
             subdir=f"fold_{fold_num}"
         )
 
+        # Test accuracies on gold standard
+        # Disable any noise
+        self._label_region_loader.introduce_noise = False
+
         file_accuracies = {}
         for key in tqdm(fold["test"], desc=f"Test Set Validation of fold {fold_num}"):
             sheet_data = self._dataset.get_specific_sheetdata(key, self._label_region_loader)
