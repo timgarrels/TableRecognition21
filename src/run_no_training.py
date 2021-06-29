@@ -6,7 +6,6 @@ from os.path import join
 from dataset.DataPreprocessor import DataPreprocessor
 from dataset.Dataset import Dataset
 from experiments.NoTrainingNoSeed import NoTrainingNoSeed
-from labelregions.LabelRegionLoader import LabelRegionLoader
 
 logging.basicConfig(level=logging.INFO)
 
@@ -16,13 +15,12 @@ logger = logging.getLogger(__name__)
 DATA_DIR = join(getcwd(), "data")
 OUTPUT_DIR = join(getcwd(), "output")
 
-label_region_loader = LabelRegionLoader()
-DECO = Dataset(join(DATA_DIR, "Deco"), "Deco", label_region_loader)
-FUSTE = Dataset(join(DATA_DIR, "FusTe"), "FusTe", label_region_loader)
-TEST = Dataset(join(DATA_DIR, "Test"), "Test", label_region_loader)
-
 
 def main():
+    DECO = Dataset(join(DATA_DIR, "Deco"), "Deco")
+    FUSTE = Dataset(join(DATA_DIR, "FusTe"), "FusTe")
+    TEST = Dataset(join(DATA_DIR, "Test"), "Test")
+
     datasets = dict([(ds.name, ds) for ds in [DECO, FUSTE, TEST]])
 
     parser = argparse.ArgumentParser()
@@ -32,7 +30,7 @@ def main():
     dataset = datasets[args.dataset]
 
     data_preprocessor = DataPreprocessor(DATA_DIR, "preprocessed_annotations_elements.json")
-    data_preprocessor.preprocess()
+    data_preprocessor.preprocess(dataset.name)
 
     NoTrainingNoSeed(dataset, OUTPUT_DIR).start()
 
