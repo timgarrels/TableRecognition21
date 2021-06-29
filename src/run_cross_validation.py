@@ -46,7 +46,7 @@ def main():
     dataset = datasets[args.dataset]
 
     data_preprocessor = DataPreprocessor(DATA_DIR, "preprocessed_annotations_elements.json")
-    data_preprocessor.preprocess(args.dataset)
+    data_preprocessor.preprocess(dataset.name)
 
     label_region_loader = LabelRegionLoader(introduce_noise=args.noise)
 
