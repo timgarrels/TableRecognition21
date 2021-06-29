@@ -1,5 +1,6 @@
 import argparse
 import logging
+import random
 from os import getcwd
 from os.path import join
 
@@ -33,10 +34,19 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", help=f"Specify the dataset. One of {list(datasets.keys())}", required=True)
     parser.add_argument("--action", help=f"Specify the action to perform: {list(actions.keys())}", required=True)
-    parser.add_argument("--fold-number", help=f"Specify fold number (only on 'run_fold_number' action", required=False)
+    parser.add_argument(
+        "--fold-number",
+        help=f"Specify fold number (only on 'run_fold_number' action",
+        required=False,
+        type=int,
+    )
     parser.add_argument("--noise", default=False, action="store_true",
                         help="Add noise while loading label regions")
+    parser.add_argument("--seed", help="Set the seed for random module", type=int)
     args = parser.parse_args()
+
+    if args.seed is not None:
+        random.seed(args.seed)
 
     dataset = datasets[args.dataset]
 
