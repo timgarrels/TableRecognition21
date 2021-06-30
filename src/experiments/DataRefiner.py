@@ -1,5 +1,6 @@
 """Outputs additional data for sheetdata such as edge count and column widths"""
 import json
+import logging
 from itertools import chain
 from os import makedirs
 from os.path import join
@@ -14,6 +15,8 @@ from graph.SpreadSheetGraph import SpreadSheetGraph
 from labelregions.BoundingBox import BoundingBox
 from labelregions.LabelRegionLoader import LabelRegionLoader
 
+logger = logging.getLogger(__name__)
+
 
 def refine(dataset: Dataset, output_dir: str):
     output_dir = join(output_dir, dataset.name)
@@ -21,6 +24,7 @@ def refine(dataset: Dataset, output_dir: str):
 
     label_region_loader = LabelRegionLoader()
     refined_data = {}
+    logger.info("Refining dataset")
     for key in tqdm(dataset.keys):
         refined = refine_sheet_data(dataset.get_specific_sheetdata(key, label_region_loader))
         refined_data[key] = refined

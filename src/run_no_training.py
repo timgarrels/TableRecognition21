@@ -5,6 +5,7 @@ from os.path import join
 
 from dataset.DataPreprocessor import DataPreprocessor
 from dataset.Dataset import Dataset
+from experiments import DataRefiner
 from experiments.NoTrainingNoSeed import NoTrainingNoSeed
 
 logging.basicConfig(level=logging.INFO)
@@ -31,6 +32,8 @@ def main():
 
     data_preprocessor = DataPreprocessor(DATA_DIR, "preprocessed_annotations_elements.json")
     data_preprocessor.preprocess(dataset.name)
+
+    DataRefiner.refine(dataset, OUTPUT_DIR)
 
     NoTrainingNoSeed(dataset, OUTPUT_DIR).start()
 
