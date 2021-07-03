@@ -6,7 +6,7 @@ import json
 import uuid
 from os import makedirs
 from os.path import join
-from random import choice, shuffle
+from random import choice, shuffle, seed
 from typing import List, Dict, Union
 
 from numpy import array_split
@@ -33,12 +33,15 @@ class CrossValidationTraining(object):
             k=10,
             weight_tuning_rounds=10,
             search_rounds=10,
+            random_seed=1,
     ):
+        seed(random_seed)
         self._dataset = dataset
         self._label_region_loader = label_region_loader
 
         run_id = uuid.uuid1().hex
-        self._out_path = join(out_path, dataset.name, self.__class__.__name__, run_id)
+        dir_name = f"{'noise' if label_region_loader.introduce_noise else 'no_noise'}_{random_seed}_{run_id}"
+        self._out_path = join(out_path, dataset.name, self.__class__.__name__, dir_name)
         makedirs(self._out_path, exist_ok=True)
 
         self._k = k
@@ -52,6 +55,7 @@ class CrossValidationTraining(object):
             "k": self._k,
             "weight_tuning_rounds": self._weight_tuning_rounds,
             "search_rounds": self._search_rounds,
+            "seed": random_seed,
         })
 
     def start(self):

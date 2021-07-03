@@ -1,6 +1,5 @@
 import argparse
 import logging
-import random
 from os import getcwd
 from os.path import join
 
@@ -28,21 +27,10 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", help=f"Specify the dataset. One of {list(datasets.keys())}", required=True)
-
-    parser.add_argument("--seed", help="Set the seed for random module", type=int)
-
-    # Experiment Configuration
+    parser.add_argument("--seed", help="Set the seed for random module", type=int, default=1)
     parser.add_argument("--noise", default=False, action="store_true",
                         help="Add noise while loading label regions")
-    # TODO: Args have no effect
-    parser.add_argument("--folds", help="Cross Validation Fold Count", type=int, default=10)
-    parser.add_argument("--weight-rounds", help="Weight Tuning Round Count", type=int, default=10)
-    parser.add_argument("--search-rounds", help="Genetic Search Round Count", type=int, default=10)
-
     args = parser.parse_args()
-
-    if args.seed is not None:
-        random.seed(args.seed)
 
     dataset = datasets[args.dataset]
 
@@ -53,7 +41,7 @@ def main():
 
     label_region_loader = LabelRegionLoader(introduce_noise=args.noise)
 
-    experiment = CrossValidationTraining(dataset, label_region_loader, OUTPUT_DIR)
+    experiment = CrossValidationTraining(dataset, label_region_loader, OUTPUT_DIR, args.seed)
     experiment.start()
 
 
