@@ -1,5 +1,6 @@
 import argparse
 import logging
+import sys
 from os import getcwd
 from os.path import join
 
@@ -9,7 +10,7 @@ from experiments import DataRefiner
 from experiments.CrossValidationTraining import CrossValidationTraining
 from labelregions.LabelRegionLoader import LabelRegionLoader
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, stream=sys.stderr)
 
 logger = logging.getLogger(__name__)
 # logger.setLevel(logging.INFO)
