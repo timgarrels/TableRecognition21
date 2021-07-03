@@ -42,7 +42,7 @@ def main():
 
     label_region_loader = LabelRegionLoader(introduce_noise=args.noise)
 
-    experiment = CrossValidationTraining(dataset, label_region_loader, OUTPUT_DIR, args.seed)
+    experiment = CrossValidationTraining(dataset, label_region_loader, OUTPUT_DIR, random_seed=args.seed)
     experiment.start()
 
 
