@@ -4,7 +4,6 @@ Accuracy is measured as jacard-index >= 0.9"""
 
 import json
 import uuid
-from multiprocessing.pool import ThreadPool
 from os import makedirs
 from os.path import join
 from random import choice, shuffle
@@ -34,7 +33,6 @@ class CrossValidationTraining(object):
             k=10,
             weight_tuning_rounds=10,
             search_rounds=10,
-            threads=1,
     ):
         self._dataset = dataset
         self._label_region_loader = label_region_loader
@@ -47,9 +45,6 @@ class CrossValidationTraining(object):
         self._weight_tuning_rounds = weight_tuning_rounds
         self._search_rounds = search_rounds
 
-        self._threads = min(threads, self._k)  # Not more threads than folds!
-        self._thread_pool = ThreadPool(self._threads)
-
         # Dump config
         self.dump("config.json", {
             "dataset": self._dataset.name,
@@ -57,7 +52,6 @@ class CrossValidationTraining(object):
             "k": self._k,
             "weight_tuning_rounds": self._weight_tuning_rounds,
             "search_rounds": self._search_rounds,
-            "threads": self._threads,
         })
 
     def start(self):
@@ -65,11 +59,9 @@ class CrossValidationTraining(object):
         folds = self.get_folds()
         self.dump("folds.json", dict([(i, fold) for i, fold in enumerate(folds)]))
 
-        def parallel_fold_processing_wrapper(fold_num_and_fold):
-            return self.process_fold(fold_num_and_fold[1], fold_num_and_fold[0])
-
-        # Process folds in parallel
-        fold_accuracies = self._thread_pool.map(parallel_fold_processing_wrapper, enumerate(folds))
+        fold_accuracies = []
+        for fold_num_and_fold in tqdm(enumerate(folds)):
+            fold_accuracies.append(self.process_fold(fold_num_and_fold[1], fold_num_and_fold[0]))
 
         self.dump(
             "final_accuracy.json",
@@ -230,7 +222,6 @@ class CrossValidationTraining(object):
             GeneticSearchConfiguration(sheet_graph),
         )
 
-        # No multithreading to leverage cache
         results = [search.run() for _ in range(self._search_rounds)]
         accuracies = [
             Analyser.accuracy_based_on_jacard_index(ground_truth, result.get_table_definitions())

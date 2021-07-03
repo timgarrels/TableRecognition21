@@ -38,7 +38,6 @@ def main():
     parser.add_argument("--folds", help="Cross Validation Fold Count", type=int, default=10)
     parser.add_argument("--weight-rounds", help="Weight Tuning Round Count", type=int, default=10)
     parser.add_argument("--search-rounds", help="Genetic Search Round Count", type=int, default=10)
-    parser.add_argument("--threads", help="Set the thread count for fold parallelization", type=int, default=1)
 
     args = parser.parse_args()
 
@@ -54,7 +53,7 @@ def main():
 
     label_region_loader = LabelRegionLoader(introduce_noise=args.noise)
 
-    experiment = CrossValidationTraining(dataset, label_region_loader, OUTPUT_DIR, threads=args.threads)
+    experiment = CrossValidationTraining(dataset, label_region_loader, OUTPUT_DIR)
     experiment.start()
 
 
