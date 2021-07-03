@@ -114,4 +114,4 @@ def accuracy_based_on_jacard_index(ground_truth: List[BoundingBox],
             jacard_index = cells_in_common / cells_in_union
             if jacard_index >= 0.9:
                 recognized_tables.append(table)
-    return len(recognized_tables) / len(ground_truth)
+    return len(set(recognized_tables)) / len(ground_truth)
