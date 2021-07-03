@@ -33,7 +33,7 @@ def main():
     data_preprocessor = DataPreprocessor(DATA_DIR, "preprocessed_annotations_elements.json")
     data_preprocessor.preprocess(dataset.name)
 
-    DataRefiner.refine(dataset, OUTPUT_DIR)
+    DataRefiner.refine(dataset)
 
     NoTrainingNoSeed(dataset, OUTPUT_DIR).start()
 

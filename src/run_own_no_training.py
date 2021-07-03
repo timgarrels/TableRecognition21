@@ -36,7 +36,7 @@ def main():
     data_preprocessor = DataPreprocessor(DATA_DIR, "preprocessed_annotations_elements.json")
     data_preprocessor.preprocess(dataset.name)
 
-    DataRefiner.refine(dataset, OUTPUT_DIR)
+    DataRefiner.refine(dataset)
 
     factor = 5
 
@@ -70,12 +70,20 @@ def main():
             return factor
         return 1
 
+    def prefer_edges_with_similar_size(edge: Edge) -> int:
+        total_size = edge.source.area - edge.destination.area
+        if total_size == 0:
+            return factor
+        f = 1 - abs(edge.source.area / total_size - edge.destination.area / total_size)
+        return f * factor
+
     callbacks = [
         same_over_different,
         header_over_data,
         data_over_header,
         horizontal_over_vertical_alignment,
         long_over_short,
+        prefer_edges_with_similar_size,
     ]
 
     def wrapper(callback):

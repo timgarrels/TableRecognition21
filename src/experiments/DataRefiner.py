@@ -2,8 +2,7 @@
 import json
 import logging
 from itertools import chain
-from os import makedirs
-from os.path import join
+from os.path import join, exists
 
 from openpyxl.utils import get_column_letter
 from tqdm import tqdm
@@ -18,9 +17,11 @@ from labelregions.LabelRegionLoader import LabelRegionLoader
 logger = logging.getLogger(__name__)
 
 
-def refine(dataset: Dataset, output_dir: str):
-    output_dir = join(output_dir, dataset.name)
-    makedirs(output_dir, exist_ok=True)
+def refine(dataset: Dataset):
+    out_file = join(dataset.path, "refined.json")
+    if exists(out_file):
+        logger.info(f"Already refined!")
+        return
 
     label_region_loader = LabelRegionLoader()
     refined_data = {}
@@ -28,7 +29,7 @@ def refine(dataset: Dataset, output_dir: str):
     for key in tqdm(dataset.keys):
         refined = refine_sheet_data(dataset.get_specific_sheetdata(key, label_region_loader))
         refined_data[key] = refined
-    with open(join(output_dir, "refined.json"), "w") as f:
+    with open(out_file, "w") as f:
         json.dump(refined_data, f, ensure_ascii=False, indent=4)
 
 
