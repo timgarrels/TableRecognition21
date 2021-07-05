@@ -160,7 +160,7 @@ class CrossValidationTraining(object):
 
         partitions = {}
         for graph in graphs:
-            partitions[graph] = CrossValidationTraining.generate_alternatives(graph, 10)
+            partitions[graph] = CrossValidationTraining.generate_alternatives(graph, 10 * len(graph.get_components()))
 
         self.dump(
             f"fold_{fold_num}_training_round_{training_round}_input.json",
