@@ -111,6 +111,9 @@ def avg_waec(component: GraphComponentData) -> float:
             group = [col_index]
 
         group.append(col_index)
+    # The group contains tha last index. That index can not be followed by a gap, because its the end
+    # Append that last group
+    c_emt.append(group)
 
     if len(c_emt) == 0:
         # Assumption: The metric lacks handling of missing empty columns, which would lead to division by zero
@@ -151,6 +154,9 @@ def avg_waer(component: GraphComponentData) -> float:
             group = [row_index]
 
         group.append(row_index)
+    # The group contains tha last index. That index can not be followed by a gap, because its the end
+    # Append that last group
+    r_emt.append(group)
 
     if len(r_emt) == 0:
         # Assumption: The metric lacks handling of missing empty rows, which would lead to division by zero
