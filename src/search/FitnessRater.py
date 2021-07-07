@@ -248,9 +248,13 @@ class FitnessRater(object):
         # Cache from components & metric to score for partition based metrics
         self._partition_score_cache: Dict[Worksheet, Dict[str, Dict[str, float]]] = {}
 
-        if len(weights) != len(COMPONENT_BASED_METRICS) + 1:
+        if len(weights) != self.__class__.correct_weight_length():
             raise ValueError("Weight Vector not the correct size!")
         self.weights = weights
+
+    @staticmethod
+    def correct_weight_length():
+        return len(COMPONENT_BASED_METRICS) + len(PARTITION_BASED_METRICS)
 
     def get_from_component_cache(
             self,
