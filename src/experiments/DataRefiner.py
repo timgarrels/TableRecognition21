@@ -54,6 +54,7 @@ def refine_sheet_data(sheet_data: SheetData):
         "xs_between_widths": xs_between_widths,
         "xs_inside_widths": xs_inside_widths,
         "table_count": len(components),
+        "label_region_count": len(graph.nodes),
     }
 
 
