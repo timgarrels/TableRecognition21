@@ -34,18 +34,15 @@ class ImprovedFitnessRater(FitnessRater):
         likely_multi_table = density < self.multi_table_file_mean_density
         if not likely_multi_table:
             return 0
-        # Return the percentage label regions turned into tables, inverted
-        # The more label regions from independent tables, the lower this score gets
-        return 1 - len(graph.get_components()) / len(graph.nodes)
+        return 1
 
     def single_table_density_score(self, graph: SpreadSheetGraph) -> float:
         density = (2 * len(graph.edge_list) / (len(graph.nodes) * (len(graph.nodes) - 1)))
         likely_single_table = density > self.single_table_file_mean_density
         if not likely_single_table:
             return 0
-        # Return the percentage label regions turned into tables
-        # The less label regions from independent tables, the higher this score gets
-        return len(graph.get_components()) / len(graph.nodes)
+        # Likely to be a single table, return table count -1 as punishment
+        return len(graph.get_components()) - 1
 
     def rate(self, graph: SpreadSheetGraph, edge_toggle_list: List[bool]) -> float:
         """Rates a graph based on a edge toggle list"""
