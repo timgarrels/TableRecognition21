@@ -2,8 +2,10 @@
 import logging
 from typing import List
 
+from graph.Edge import ConnectionType
 from graph.GraphComponentData import GraphComponentData
 from graph.SpreadSheetGraph import SpreadSheetGraph
+from labelregions.LabelRegionType import LabelRegionType
 from search.FitnessRater import FitnessRater, COMPONENT_BASED_METRICS, PARTITION_BASED_METRICS
 
 logger = logging.getLogger(__name__)
@@ -16,33 +18,41 @@ class ImprovedFitnessRater(FitnessRater):
     def __init__(
             self,
             weights: List[float],
-            single_table_file_mean_density: float,
-            multi_table_file_mean_density: float,
+            degree_avg_cut_median: float
     ):
 
-        self.single_table_file_mean_density = single_table_file_mean_density
-        self.multi_table_file_mean_density = multi_table_file_mean_density
+        self.degree_avg_cut_median = degree_avg_cut_median
 
         super().__init__(weights)
 
     @staticmethod
     def correct_weight_length():
-        return len(COMPONENT_BASED_METRICS) + len(PARTITION_BASED_METRICS) + 2
+        return len(COMPONENT_BASED_METRICS) + len(PARTITION_BASED_METRICS) + 1
 
-    def multi_table_density_score(self, graph: SpreadSheetGraph) -> float:
-        density = (2 * len(graph.edge_list) / (len(graph.nodes) * (len(graph.nodes) - 1)))
-        likely_multi_table = density < self.multi_table_file_mean_density
+    @staticmethod
+    def header_lrs(graph):
+        return list(filter(lambda x: x.type == LabelRegionType.HEADER, graph.nodes))
+
+    @staticmethod
+    def data_lrs(graph):
+        return list(filter(lambda x: x.type == LabelRegionType.DATA, graph.nodes))
+
+    @staticmethod
+    def degree_avg_cut(graph):
+        d_d = [edge for edge in graph.edge_list if edge.connection_type == ConnectionType.D_D]
+        h_h = [edge for edge in graph.edge_list if edge.connection_type == ConnectionType.H_H]
+
+        d_d_degree_avg = len(d_d) / len(ImprovedFitnessRater.data_lrs(graph))
+        h_h_degree_avg = len(h_h) / len(ImprovedFitnessRater.header_lrs(graph))
+        return d_d_degree_avg * h_h_degree_avg
+
+    def multi_table_prediction_score(self, graph: SpreadSheetGraph) -> float:
+        degree_avg_cut = ImprovedFitnessRater.degree_avg_cut(graph)
+        likely_multi_table = degree_avg_cut <= self.degree_avg_cut_median
+
         is_multi_table = len(graph.get_components()) > 1
         # Punish if the prediction is different from the density heuristic
         return is_multi_table and not likely_multi_table
-
-    def single_table_density_score(self, graph: SpreadSheetGraph) -> float:
-        density = (2 * len(graph.edge_list) / (len(graph.nodes) * (len(graph.nodes) - 1)))
-        likely_single_table = density > self.single_table_file_mean_density
-        if not likely_single_table:
-            return 0
-        # Likely to be a single table, return table count -1 as punishment
-        return len(graph.get_components()) - 1
 
     def rate(self, graph: SpreadSheetGraph, edge_toggle_list: List[bool]) -> float:
         """Rates a graph based on a edge toggle list"""
@@ -52,8 +62,7 @@ class ImprovedFitnessRater(FitnessRater):
         graph.edge_toggle_list = edge_toggle_list
         components = [GraphComponentData(c, graph) for c in graph.get_components()]
 
-        single_table_density_score = self.single_table_density_score(graph)
-        multi_table_density_score = self.multi_table_density_score(graph)
+        degree_avg_cut_score = self.multi_table_prediction_score(graph)
 
         graph.edge_toggle_list = old_toggle_list
 
@@ -74,6 +83,5 @@ class ImprovedFitnessRater(FitnessRater):
         return (
                 sum(scores_per_component) +
                 sum(scores_per_partition) +
-                single_table_density_score * self.weights[-2] +
-                multi_table_density_score * self.weights[-1]
+                degree_avg_cut_score * self.weights[-1]
         )

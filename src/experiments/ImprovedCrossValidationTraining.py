@@ -3,8 +3,8 @@ Weights and Accuracy are averaged.
 Accuracy is measured as jacard-index >= 0.9"""
 
 from os.path import join
-from statistics import mean
-from typing import List, Dict, Union, Tuple
+from statistics import median
+from typing import List, Dict, Union
 
 from scipy.optimize import minimize, Bounds
 from tqdm import tqdm
@@ -17,17 +17,14 @@ from search.ImprovedFitnessRater import ImprovedFitnessRater
 
 class ImprovedCrossValidationTraining(CrossValidationTraining):
 
-    def get_density_means(self, keys: List[str]) -> Tuple[float, float]:
-        single_table_file_densities = []
-        multi_table_file_densities = []
+    def get_degree_avg_multi_cut(self, keys: List[str]) -> float:
+        degree_avg_s = []
         for key in keys:
             graph = SpreadSheetGraph(self._dataset.get_specific_sheetdata(key, self._label_region_loader))
-            density = (2 * len(graph.edge_list) / (len(graph.nodes) * (len(graph.nodes) - 1)))
-            if len(graph.get_components()) == 1:
-                single_table_file_densities.append(density)
-            else:
-                multi_table_file_densities.append(density)
-        return mean(single_table_file_densities), mean(multi_table_file_densities)
+            if len(graph.get_components()) > 1:
+                degree_avg_cut = ImprovedFitnessRater.degree_avg_cut(graph)
+                degree_avg_s.append(degree_avg_cut)
+        return median(degree_avg_s)
 
     def process_fold(self, fold: Dict[str, List], fold_num: int) -> float:
         """Evaluates on fold of the cross validation, returns the accuracy of the fold"""
@@ -48,13 +45,13 @@ class ImprovedCrossValidationTraining(CrossValidationTraining):
         # Disable any noise
         self._label_region_loader.introduce_noise = False
 
-        single_table_density_mean, multi_table_density_mean = self.get_density_means(fold["test"])
+        degree_avg_cut = self.get_degree_avg_multi_cut(fold["test"])
         file_accuracies = {}
         for key in tqdm(fold["test"], desc=f"Test Set Validation of fold {fold_num}"):
             sheet_data = self._dataset.get_specific_sheetdata(key, self._label_region_loader)
             sheet_graph = SpreadSheetGraph(sheet_data)
             ground_truth = sheet_graph.get_table_definitions()
-            rater = ImprovedFitnessRater(weights, single_table_density_mean, multi_table_density_mean)
+            rater = ImprovedFitnessRater(weights, degree_avg_cut)
             if len(sheet_graph.nodes) <= 10:
                 accuracy = CrossValidationTraining.exhaustive_search_accuracy(ground_truth, sheet_graph, rater)
             else:
@@ -86,10 +83,10 @@ class ImprovedCrossValidationTraining(CrossValidationTraining):
             subdir=join(f"fold_{fold_num}", "training")
         )
 
-        initial_weights = get_initial_weights() + [1, 1]  # Add two weights for the two extra density scores
-        single_table_density_mean, multi_table_density_mean = self.get_density_means(train_keys)
+        initial_weights = get_initial_weights() + [1]  # Add one weights for the median avg degree cut
+        degree_avg_cut = self.get_degree_avg_multi_cut(train_keys)
         # Create rater object outside to leverage caching
-        rater = ImprovedFitnessRater(initial_weights, single_table_density_mean, multi_table_density_mean)
+        rater = ImprovedFitnessRater(initial_weights, degree_avg_cut)
 
         res = minimize(
             CrossValidationTraining.objective_function,
