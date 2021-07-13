@@ -32,9 +32,9 @@ class ImprovedFitnessRater(FitnessRater):
     def multi_table_density_score(self, graph: SpreadSheetGraph) -> float:
         density = (2 * len(graph.edge_list) / (len(graph.nodes) * (len(graph.nodes) - 1)))
         likely_multi_table = density < self.multi_table_file_mean_density
-        if not likely_multi_table:
-            return 0
-        return 1
+        is_multi_table = len(graph.get_components()) > 1
+        # Punish if the prediction is different from the density heuristic
+        return is_multi_table and not likely_multi_table
 
     def single_table_density_score(self, graph: SpreadSheetGraph) -> float:
         density = (2 * len(graph.edge_list) / (len(graph.nodes) * (len(graph.nodes) - 1)))
