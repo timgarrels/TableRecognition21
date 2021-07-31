@@ -1,3 +1,5 @@
+"""Representation and Utility of a Spreadsheet Corpus"""
+
 import json
 import logging
 from functools import cached_property
@@ -11,21 +13,23 @@ from dataset.SheetData import SheetData
 from labelregions.LabelRegionLoader import LabelRegionLoader
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
-
-# TODO: Investigate, what is running so long with huge files, and think to either remove or document skipping of huge files!
-# TODO: Investigate, which files contribute with the extremely worse precision
-# TODO: Improve logging of skipped wb & sheets, so the reasons are transparent, uniformly logged and in the same place, maybe introduce custom exceptions for that
 
 class Dataset(object):
-    def __init__(self, path, name, annotations_file_name="preprocessed_annotations_elements.json"):
+    def __init__(
+            self,
+            path,
+            name,
+            # Uses preprocessed annotation elements per default. Parameterize with annotations_elements.json to use raw
+            annotations_file_name="preprocessed_annotations_elements.json",
+    ):
         self.path = path
         self.name = name
         self.annotations_file_name = annotations_file_name
 
     @cached_property
     def _annotations(self):
+        """Load the annotation json"""
         annotation_file = join(self.path, self.annotations_file_name)
         with open(annotation_file) as f:
             data = f.read()
@@ -33,17 +37,21 @@ class Dataset(object):
 
     @property
     def multi_table_keys(self):
+        """Get all file keys with more than one table"""
         return [key for key, value in self._annotations.items() if value["n_regions"] > 1]
 
     @property
     def single_table_keys(self):
+        """Get all file keys with exactly one table"""
         return [key for key, value in self._annotations.items() if value["n_regions"] == 1]
 
     @property
     def keys(self):
+        """Get all file keys"""
         return self._annotations.keys()
 
     def sheet_data_count(self, exceptions: List[str] = None):
+        """Get the count of all annotated sheets without the specified exceptions"""
         if exceptions is None:
             exceptions = []
         return len(set(self._annotations.keys()).difference(exceptions))
@@ -63,39 +71,23 @@ class Dataset(object):
             yield self.get_specific_sheetdata(key, label_region_loader)
 
     def get_specific_sheetdata(self, key: str, label_region_loader: LabelRegionLoader) -> SheetData:
+        """Return sheet data object of the given file key, loaded with the given label region loader"""
+        # Load the xls
         xls_file_name, sheet_name = DataPreprocessor.split_annotation_key(key)
         xls_file_path = join(self.path, "xls", xls_file_name)
         wb = load_workbook(xls_file_path)
-        wb.path = xls_file_path  # Path is wrongly defaulted to /xl/workbook.xml
+        wb.path = xls_file_path  # Path is wrongly defaulted to /xl/workbook.xml, change it
         ws = wb[sheet_name]
 
+        # Load the annotations
         sheet_annotations = self._annotations[key]
         label_regions, table_definitions = label_region_loader.load_label_regions_and_table_definitions(
             ws,
             sheet_annotations,
         )
+        # Create & return the sheetdata
         return SheetData(ws, label_regions, table_definitions)
 
-    def summarize(self):
-        """Summarizes Dataset Annotations"""
-        data = self._annotations
-
-        analytical_data = {}
-        for sheet, sheetdata in data.items():
-            analytical_data[sheet] = {
-                "table_count": 0,
-            }
-            for region in sheetdata["regions"]:
-                if region["region_type"] == "Table":
-                    analytical_data[sheet]["table_count"] += 1
-
-        print(f"Total Sheets: {len(analytical_data.keys())}")
-        print(
-            f"Single Table Sheets: {len([sheet for sheet, analytical_sheetdata in analytical_data.items() if analytical_sheetdata['table_count'] == 1])}")
-        print(
-            f"Multi Table Sheets: {len([sheet for sheet, analytical_sheetdata in analytical_data.items() if analytical_sheetdata['table_count'] > 1])}")
-
-        print(f"Total Annotatd Tables: {sum([data['table_count'] for data in analytical_data.values()])}")
-
     def __str__(self):
+        """Dataset String Representation"""
         return f"Dataset: {self.name}"

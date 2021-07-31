@@ -1,4 +1,5 @@
-"""Drops sheets with hidden rows/cols and sheets that are too large from the annotations"""
+"""Preprocess the annotation file"""
+
 import json
 import logging
 from os.path import join, getsize, exists
@@ -11,32 +12,23 @@ from tqdm import tqdm
 logger = logging.getLogger(__name__)
 
 
-# TODO: Preprocess Sheets to remove all hidden rows and columns
-#       The Chair Annotations are based on csv's, which do not contain hidden cols/rows. This means that
-#       we have to handle hidden rows/cols somehow. CUrrently, all sheets with hidden cols/rows are just skipped
-#       There are multiple possible solutions:
-#       1. Work on the csv files, by turning them into xls again. Easiest solution, requires little work
-#           Problem: width and height are lost, which are required for certain metrics
-#       2. Remove hidden rows/cols from the xls, by shifting data. Supported by openpyxl
-#           Problem: Shifts only data, not formatting width and height are now wrongly assigned.
-#       3. I rewrote the annotation preprocessor to skip over hidden rows and columns,
-#           by creating a list of unhidden col_letters and unhidden row_indices, which I then can access with the
-#           annotation coordinates
-#           Problem: As label regions still have to be merged, it would require a major refactor
-#           to enable label regions to span over hidden rows/columns.
-
 class DataPreprocessor(object):
-    def __init__(self, data_path: str, preprocessed_annotation_file_name: str, remove_hidden=True,
-                 file_size_cap=1000 * 100):
+    def __init__(
+            self,
+            data_path: str,
+            preprocessed_annotation_file_name: str,
+            remove_hidden=True,
+            file_size_cap=1000 * 100,
+    ):
         self.data_path = data_path
         self.preprocessed_annotation_file_name = preprocessed_annotation_file_name
         self.remove_hidden = remove_hidden
         self.file_size_cap = file_size_cap
 
     def preprocess(self, dataset_name: str):
-        """Remove files that are too large, not loadable or contain hidden rows/cols.
-        Rewrite the annotations of these files to only contain table annotations
-        with label regions of the correct type"""
+        """Creates a new annotation file from the original one.
+        Drops invalid xls files (too large, contains hidden, not loadable).
+        Rewrites the annotations to match the table model proposed by Koci et al."""
         annotation_file_path = join(self.data_path, dataset_name, "annotations_elements.json")
         preprocessed_annotation_file_path = join(self.data_path, dataset_name, self.preprocessed_annotation_file_name)
         xls_dir_path = join(self.data_path, dataset_name, "xls")
@@ -71,18 +63,22 @@ class DataPreprocessor(object):
                 continue
 
             # Skip is sheet contains hidden rows/cols
+            # Note:
+            # This is coherent with the authors previous publications of Koci et al.
+            # See "Table Recognition in Spreadsheets via a Graph Representation, 2018 - VI. Experimental Evaluation A"
             ws = wb[sheet_name]
             if DataPreprocessor.worksheet_contains_hidden(ws):
                 continue
 
             # Add annotation
             new_annotations[key] = self.filter_and_rewrite_annotation(annotations[key])
-        # Write new annotations
+        # Write new annotations to disk
         with open(preprocessed_annotation_file_path, "w") as f:
             json.dump(new_annotations, f, ensure_ascii=False, indent=4)
 
     @staticmethod
     def worksheet_contains_hidden(worksheet: Worksheet):
+        """Whether a worksheet contains hidden cells"""
         hidden_cols = [dim for _, dim in worksheet.column_dimensions.items() if dim.hidden is True]
         hidden_rows = [dim for _, dim in worksheet.row_dimensions.items() if dim.hidden is True]
         if len(hidden_cols) > 0 or len(hidden_rows) > 0:
@@ -113,7 +109,7 @@ class DataPreprocessor(object):
         # Rewrite annotations
         for table_region in table_regions:
             label_regions = table_region["elements"]
-            # Set Derived = Data and GroupHead = Header
+            # Rewrite Derived to Data and GroupHead to Header Type
             for label_region in label_regions:
                 if label_region["type"] == "Derived":
                     label_region["type"] = "Data"
