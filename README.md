@@ -23,35 +23,9 @@ with more than 10 edges.
 
 The quality of a graph with a specific edge list is measured with metrics defined in `FitnessRater`.
 
-## Usage
-
-There are two experiments in this repository:
-
-### NoTrainingNoSeed
-
-This algorithm will perform the searches as explained above on all annotated spreadsheets. The results are evaluated
-with precision, recall and F1 scores.
-
-```
-python3 src/run_no_training.py --dataset FusTe
-```
-
 ### CrossValidationTraining
 
 This algorithm will cross validate the machine learning approach to tune the metrics to a specific dataset. As it can
 run really long, there is the option to split the run into separate folds.
 
-Complete run: `python3 src/run_cross_validation.py --dataset Test --action full_run`
-
-To split, call in this order:
-
-```
-python3 src/run_cross_validation.py --dataset Test --action prepare
-
-python3 src/run_cross_validation.py --dataset Test --action run_fold_number --fold-number 0
-python3 src/run_cross_validation.py --dataset Test --action run_fold_number --fold-number ...
-python3 src/run_cross_validation.py --dataset Test --action run_fold_number --fold-number 9
-
-
-python3 src/run_cross_validation.py --dataset Test --action finalize
-```
+Complete run: `python3 src/run_cross_validation.py --dataset Test`
