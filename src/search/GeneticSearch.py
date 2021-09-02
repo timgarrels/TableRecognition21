@@ -30,6 +30,15 @@ class GeneticSearch(AbstractSearch):
         self._population: List[IndividualType] = []
         self._hof_individual: IndividualType = ([], math.inf)  # Low Rating better , inf is the worst rating
 
+        # Mutation Probabilities
+        # Contains the factor of mutation probability
+        # An edge with factor 100 is 100 times more likely to mutate than an edge with factor 1
+        self._mutation_probability_per_edge = []
+        for i, edge in enumerate(graph.edge_list):
+            self._mutation_probability_per_edge.append(
+                self.configuration.edge_mutation_probability_callback(edge)
+            )
+
     def random_edge_toggle_list(self) -> List[bool]:
         """Creates a single, random edge toggle list"""
         # TODO: Implement Seed
@@ -94,7 +103,13 @@ class GeneticSearch(AbstractSearch):
             # Do random mutation
             parent = random.choice(potential_parents)
             child = parent
-            mutated_index = random.randint(0, len(parent) - 1)
+
+            mutation_candidates = []
+            for edge_index, mutation_probability in enumerate(self._mutation_probability_per_edge):
+                # Put in the candidate mutation_probability times into the choice list
+                mutation_candidates += [edge_index] * mutation_probability
+
+            mutated_index = random.choice(mutation_candidates)
             child[mutated_index] = not child[mutated_index]
         elif self.configuration.rand_mut_p < p < self.configuration.rand_mut_p + self.configuration.cross_mut_p:
             # Do uniform cross mutation
