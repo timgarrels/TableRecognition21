@@ -2,7 +2,7 @@
 import math
 from typing import Callable
 
-from graph import Edge
+from graph.Edge import Edge
 from graph.SpreadSheetGraph import SpreadSheetGraph
 
 
