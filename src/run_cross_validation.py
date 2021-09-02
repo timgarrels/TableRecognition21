@@ -33,9 +33,10 @@ def main():
     parser.add_argument("--seed", help="Set the seed for random module", type=int, default=1)
     parser.add_argument("--noise", default=False, action="store_true",
                         help="Add noise while loading label regions")
-    parser.add_argument("--improvement", default="None", help="Specify an improvement to apply to the approach",
+    parser.add_argument("--improvement", default="NoImprovement",
+                        help="Specify an improvement to apply to the approach",
                         choices=[
-                            "None",
+                            "NoImprovement",
                             "EdgeMutationProbability",
                             "EdgeMutationProbabilityExtreme",
                             "AvgDegreeCut"
@@ -54,7 +55,7 @@ def main():
     edge_probability_callback = EdgePropabilityCallback.default_edge_mutation_probability_callback
     experiment_class = CrossValidationTraining
 
-    if args.improvement == "None":
+    if args.improvement == "NoImprovement":
         print("No Improvement chosen!")
     elif args.improvement == "EdgeMutationProbability":
         print(f"Improvement EdgeMutationProbability chosen!")
@@ -72,6 +73,7 @@ def main():
         dataset,
         label_region_loader,
         OUTPUT_DIR,
+        improvement_name=args.improvement,
         random_seed=args.seed,
         edge_mutation_probability_callback=edge_probability_callback,
     )

@@ -31,6 +31,7 @@ class CrossValidationTraining(object):
             dataset: Dataset,
             label_region_loader: LabelRegionLoader,
             out_path: str,
+            improvement_name: str,
             k=10,
             weight_tuning_rounds=10,
             search_rounds=10,
@@ -45,7 +46,7 @@ class CrossValidationTraining(object):
         run_id = uuid.uuid1().hex
         noise_part = 'noise' if label_region_loader.introduce_noise else 'no_noise'
         dir_name = f"{noise_part}_{random_seed}_{run_id}"
-        self._out_path = join(out_path, dataset.name, self.__class__.__name__, dir_name)
+        self._out_path = join(out_path, improvement_name, dataset.name, dir_name)
         makedirs(self._out_path, exist_ok=True)
 
         self._k = k
