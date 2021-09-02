@@ -7,7 +7,7 @@ import uuid
 from os import makedirs
 from os.path import join
 from random import choice, shuffle, seed
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Callable
 
 from numpy import array_split
 from scipy.optimize import minimize, Bounds
@@ -15,6 +15,7 @@ from tqdm import tqdm
 
 from dataset.Dataset import Dataset
 from experiments import Analyser
+from graph.Edge import Edge
 from graph.SpreadSheetGraph import SpreadSheetGraph
 from labelregions.BoundingBox import BoundingBox
 from labelregions.LabelRegionLoader import LabelRegionLoader
@@ -34,6 +35,7 @@ class CrossValidationTraining(object):
             weight_tuning_rounds=10,
             search_rounds=10,
             random_seed=1,
+            edge_mutation_probability_callback: Callable[[Edge], int] = lambda x: 1,
     ):
         seed(random_seed)
         self._dataset = dataset
@@ -49,6 +51,9 @@ class CrossValidationTraining(object):
         self._k = k
         self._weight_tuning_rounds = weight_tuning_rounds
         self._search_rounds = search_rounds
+
+        # Used to create the Genetic Search Configuration
+        self._edge_mutation_probability_callback = edge_mutation_probability_callback
 
         # Dump config
         self.dump("config.json", {
@@ -246,7 +251,10 @@ class CrossValidationTraining(object):
         search = GeneticSearch(
             sheet_graph,
             rater,
-            GeneticSearchConfiguration(sheet_graph),
+            GeneticSearchConfiguration(
+                sheet_graph,
+                edge_mutation_probability_callback=self._edge_mutation_probability_callback,
+            ),
         )
 
         # Genetic Search runs multiple times and gets averaged

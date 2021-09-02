@@ -15,6 +15,24 @@ class BoundingBox(object):
     def area(self):
         return (self.right + 1 - self.left) * (self.bottom + 1 - self.top)
 
+    @property
+    def width(self):
+        return self.right - self.left
+
+    @property
+    def height(self):
+        return self.bottom - self.top
+
+    def distance(self, box: BoundingBox):
+        bounding_box = BoundingBox.merge([self, box])
+        width = bounding_box.width - self.width - box.width
+        height = bounding_box.height - self.height - box.height
+        if width < 0:
+            width = 0
+        if height < 0:
+            height = 0
+        return width + height
+
     def intersect(self, box: BoundingBox):
         """Returns whether two bounding boxes intersect"""
         box_left_of_self = box.right < self.left

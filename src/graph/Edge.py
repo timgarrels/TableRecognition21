@@ -25,6 +25,8 @@ class Edge(object):
         self.aligned_indices = aligned_indices
         self.alignment_type = alignment_type
 
+        self.length = source.distance(destination)
+
         self.connection_type = ConnectionType.D_H
         if self.source.type == self.destination.type:
             if self.source.type == LabelRegionType.HEADER:
