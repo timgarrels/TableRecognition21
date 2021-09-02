@@ -9,7 +9,7 @@ def bayesian_scores(
         ground_truth_tables: List[BoundingBox],
         detected_tables: List[BoundingBox],
 ) -> Dict[str, float]:
-    """Calculates precision, recall and F1 score and returns a dict containing theese values"""
+    """Calculates precision, recall and F1 score and returns a dict containing these values"""
     cells_in_detected_tables = []
     for detected_table in detected_tables:
         cells_in_detected_tables.extend(detected_table.cells())
@@ -31,7 +31,7 @@ def bayesian_scores(
 
 
 def _table_overlap(ground_truth_table: BoundingBox, detected_table: BoundingBox) -> float:
-    """See Table Detection in Heterogeneous Documents 4., eq. 1"""
+    """See Table Detection in Heterogeneous Documents 4., Shafait et al., 2010, eq. 1"""
     overlap = ground_truth_table.intersection(detected_table)
     return (2 * overlap) / (ground_truth_table.area + detected_table.area)
 
@@ -40,10 +40,11 @@ def detection_evaluation(
         ground_truth_tables: List[BoundingBox],
         detected_tables: List[BoundingBox],
 ) -> Dict[str, int]:
-    """See Table Detection in Heterogeneous Documents 4."""
-    ground_truth_overlap_to_detected: Dict[BoundingBox, Dict[BoundingBox, float]] = {}.fromkeys(ground_truth_tables,
-                                                                                                {})
-    detected_overlap_to_ground_truth: Dict[BoundingBox, Dict[BoundingBox, float]] = {}.fromkeys(detected_tables, {})
+    """See Table Detection in Heterogeneous Documents 4., Shafait et al., 2010"""
+    ground_truth_overlap_to_detected: Dict[BoundingBox, Dict[BoundingBox, float]] = {}.fromkeys(
+        ground_truth_tables, {})
+    detected_overlap_to_ground_truth: Dict[BoundingBox, Dict[BoundingBox, float]] = {}.fromkeys(
+        detected_tables, {})
 
     # Create an overlap lookup in both directions
     # ground_truth -> detected & overlap, detected -> ground_truth & overlap
@@ -103,8 +104,10 @@ def detection_evaluation(
     }
 
 
-def accuracy_based_on_jacard_index(ground_truth: List[BoundingBox],
-                                   computed_result: List[BoundingBox]) -> float:
+def accuracy_based_on_jacard_index(
+        ground_truth: List[BoundingBox],
+        computed_result: List[BoundingBox],
+) -> float:
     """Percent of recognized tables as proposed in the paper Section V.D, based on the jacard index"""
     recognized_tables = []
     for table in ground_truth:

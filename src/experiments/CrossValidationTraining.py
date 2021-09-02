@@ -39,8 +39,10 @@ class CrossValidationTraining(object):
         self._dataset = dataset
         self._label_region_loader = label_region_loader
 
+        # Create a unique output dir
         run_id = uuid.uuid1().hex
-        dir_name = f"{'noise' if label_region_loader.introduce_noise else 'no_noise'}_{random_seed}_{run_id}"
+        noise_part = 'noise' if label_region_loader.introduce_noise else 'no_noise'
+        dir_name = f"{noise_part}_{random_seed}_{run_id}"
         self._out_path = join(out_path, dataset.name, self.__class__.__name__, dir_name)
         makedirs(self._out_path, exist_ok=True)
 
@@ -71,6 +73,7 @@ class CrossValidationTraining(object):
             "final_accuracy.json",
             sum(fold_accuracies) / len(fold_accuracies),
         )
+        # Total average accuracy
         return sum(fold_accuracies) / len(fold_accuracies)
 
     def get_folds(self) -> List[Dict[str, List]]:
@@ -84,8 +87,10 @@ class CrossValidationTraining(object):
         single_table_chunks = array_split(single_table_keys, self._k)
         multi_table_chunks = array_split(multi_table_keys, self._k)
 
+        # Combine Single and Multi Table Chunks to test folds
         test_chunks = [list(s_chunk) + list(m_chunk) for s_chunk, m_chunk in
                        zip(single_table_chunks, multi_table_chunks)]
+        # Train fold is all keys without the test fold
         train_chunks = [list(set(self._dataset.keys).difference(test_chunk)) for test_chunk in test_chunks]
 
         return [{"train": train_chunk, "test": test_chunk} for train_chunk, test_chunk in
@@ -98,6 +103,7 @@ class CrossValidationTraining(object):
             self.train(fold["train"], fold_num, i)
             for i in tqdm(range(self._weight_tuning_rounds), desc=f"Training Rounds of fold {fold_num}")
         ]
+        # Average the training results weighted by their error
         weights = CrossValidationTraining.weighted_average(weights_and_errors)
 
         self.dump(
@@ -112,9 +118,12 @@ class CrossValidationTraining(object):
 
         file_accuracies = {}
         for key in tqdm(fold["test"], desc=f"Test Set Validation of fold {fold_num}"):
+            # Get ground truth data
             sheet_data = self._dataset.get_specific_sheetdata(key, self._label_region_loader)
             sheet_graph = SpreadSheetGraph(sheet_data)
             ground_truth = sheet_graph.get_table_definitions()
+
+            # Evaluate the prediction
             rater = FitnessRater(weights)
             if len(sheet_graph.nodes) <= 10:
                 accuracy = CrossValidationTraining.exhaustive_search_accuracy(ground_truth, sheet_graph, rater)
@@ -122,6 +131,7 @@ class CrossValidationTraining(object):
                 accuracy = self.genetic_search_accuracy(ground_truth, sheet_graph, rater)
             file_accuracies[key] = accuracy
 
+        # Average fold accuracies of test data
         fold_accuracy = sum(file_accuracies.values()) / len(file_accuracies.values())
         self.dump(
             f"fold_{fold_num}_file_accuracies.json",
@@ -133,8 +143,10 @@ class CrossValidationTraining(object):
     @staticmethod
     def objective_function(weights: List[float], partitions: Dict[SpreadSheetGraph, List[List[bool]]],
                            rater: FitnessRater):
-        """Objective function proposed by the paper"""
+        """Objective function proposed by the paper used by the sqp optimizer"""
+        # Update the weights
         rater.weights = weights
+        # Calculate the score by summing target partition over alternative partitions scores
         score = 0
         for graph, alternative_toggle_lists in partitions.items():
             target_partition_part = 1 + rater.rate(graph, graph.edge_toggle_list)
@@ -160,6 +172,7 @@ class CrossValidationTraining(object):
 
         partitions = {}
         for graph in graphs:
+            # Create more alternative partitions on multi table files (10 alternatives per table in file)
             partitions[graph] = CrossValidationTraining.generate_alternatives(graph, 10 * len(graph.get_components()))
 
         self.dump(
@@ -172,6 +185,7 @@ class CrossValidationTraining(object):
         # Create rater object outside to leverage caching
         rater = FitnessRater(initial_weights)
 
+        # Use SQP to minimize the obj. function
         res = minimize(
             CrossValidationTraining.objective_function,
             initial_weights,
@@ -183,10 +197,12 @@ class CrossValidationTraining(object):
         weights = list(res.x)
         rater.weights = weights
 
+        # Calculate error rate components
         total_alternative_count = 0
         better_than_original_alternative_count = 0
         for graph, alternatives in partitions.items():
             obj_score_original_graph = rater.rate(graph, graph.edge_toggle_list)
+
             total_alternative_count += len(alternatives)
             better_than_original_alternative_count += len([
                 alternative
@@ -207,8 +223,11 @@ class CrossValidationTraining(object):
         return {"weights": weights, "error_rate": better_than_original_alternative_count / total_alternative_count}
 
     @staticmethod
-    def exhaustive_search_accuracy(ground_truth: List[BoundingBox], sheet_graph: SpreadSheetGraph,
-                                   rater: FitnessRater):
+    def exhaustive_search_accuracy(
+            ground_truth: List[BoundingBox],
+            sheet_graph: SpreadSheetGraph,
+            rater: FitnessRater,
+    ):
         """Runs an exhaustive search, evaluates the result against the ground truth, and returns the accuracy score"""
         search = ExhaustiveSearch(
             sheet_graph,
@@ -217,8 +236,12 @@ class CrossValidationTraining(object):
         result = search.run()
         return Analyser.accuracy_based_on_jacard_index(ground_truth, result.get_table_definitions())
 
-    def genetic_search_accuracy(self, ground_truth: List[BoundingBox], sheet_graph: SpreadSheetGraph,
-                                rater: FitnessRater):
+    def genetic_search_accuracy(
+            self,
+            ground_truth: List[BoundingBox],
+            sheet_graph: SpreadSheetGraph,
+            rater: FitnessRater,
+    ):
         """Runs genetic searches, evaluates the results against the ground truth, and returns the avg. accuracy score"""
         search = GeneticSearch(
             sheet_graph,
@@ -226,6 +249,7 @@ class CrossValidationTraining(object):
             GeneticSearchConfiguration(sheet_graph),
         )
 
+        # Genetic Search runs multiple times and gets averaged
         results = [search.run() for _ in range(self._search_rounds)]
         accuracies = [
             Analyser.accuracy_based_on_jacard_index(ground_truth, result.get_table_definitions())
@@ -237,10 +261,10 @@ class CrossValidationTraining(object):
     @staticmethod
     def weighted_average(weights_and_errors: List[Dict[str, Union[List[float], float]]]) -> List[float]:
         """Averages the given weights based on the error rate for those weight"""
-        # weights always refer to the machine learning weight vector and contribution to the relevance (the weight)
-        # of one of these vectors in this method
-        total_err = sum([1 - e["error_rate"] for e in weights_and_errors])
 
+        # weights always refer to the machine learning weight vector and
+        # contribution refers to the weights used in the weighted average
+        total_err = sum([1 - e["error_rate"] for e in weights_and_errors])
         weights_and_contribution = [(e["weights"], (1 - e["error_rate"]) / total_err) for e in weights_and_errors]
 
         weight_vector = [0 for _ in range(len(weights_and_errors[0]["weights"]))]
@@ -249,6 +273,7 @@ class CrossValidationTraining(object):
         return weight_vector
 
     def dump(self, file_name, data, subdir=""):
+        """Dump given data to a json file"""
         if subdir != "":
             makedirs(join(self._out_path, subdir), exist_ok=True)
 

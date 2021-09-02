@@ -1,4 +1,4 @@
-"""Outputs additional data for sheetdata such as edge count and column widths"""
+"""Outputs additional data for sheetdata which is later used for notebook analysis"""
 import json
 import logging
 from itertools import chain
@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 def refine(dataset: Dataset):
+    """Extracts metadata from all sheetdata and dumps it"""
     out_file = join(dataset.path, "refined.json")
     if exists(out_file):
         logger.info(f"Already refined!")
@@ -34,6 +35,7 @@ def refine(dataset: Dataset):
 
 
 def refine_sheet_data(sheet_data: SheetData):
+    """Returns metadata for a sheetdata object"""
     graph = SpreadSheetGraph(sheet_data)
     edge_count = len(graph.edge_toggle_list)
 
@@ -46,6 +48,7 @@ def refine_sheet_data(sheet_data: SheetData):
     xs_between = get_empty_columns_between_tables(left_most_col, right_most_col, components)
     xs_inside = get_empty_columns_inside_of_tables(components)
 
+    # Column widths for later reproduction of figure 2
     xs_between_widths = [width_of_col(idx, graph) for idx in xs_between]
     xs_inside_widths = [width_of_col(idx, graph) for idx in xs_inside]
 
