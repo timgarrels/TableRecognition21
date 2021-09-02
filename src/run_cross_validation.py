@@ -9,6 +9,7 @@ from dataset.DataPreprocessor import DataPreprocessor
 from dataset.Dataset import Dataset
 from experiments import DataRefiner
 from experiments.CrossValidationTraining import CrossValidationTraining
+from experiments.ImprovedCrossValidationTraining import ImprovedCrossValidationTraining
 from labelregions.LabelRegionLoader import LabelRegionLoader
 
 logging.basicConfig(level=logging.INFO, stream=sys.stderr)
@@ -33,7 +34,12 @@ def main():
     parser.add_argument("--noise", default=False, action="store_true",
                         help="Add noise while loading label regions")
     parser.add_argument("--improvement", default="None", help="Specify an improvement to apply to the approach",
-                        choices=["None", "EdgeMutationProbability", "EdgeMutationProbabilityExtreme"])
+                        choices=[
+                            "None",
+                            "EdgeMutationProbability",
+                            "EdgeMutationProbabilityExtreme",
+                            "AvgDegreeCut"
+                        ])
     args = parser.parse_args()
 
     dataset = datasets[args.dataset]
@@ -46,19 +52,23 @@ def main():
     label_region_loader = LabelRegionLoader(introduce_noise=args.noise)
 
     edge_probability_callback = EdgePropabilityCallback.default_edge_mutation_probability_callback
+    experiment_class = CrossValidationTraining
 
     if args.improvement == "None":
         print("No Improvement chosen!")
-    elif args.improvment == "EdgeMutationProbability":
+    elif args.improvement == "EdgeMutationProbability":
         print(f"Improvement EdgeMutationProbability chosen!")
         edge_probability_callback = EdgePropabilityCallback.short_edges_different_types
-    elif args.improvment == "EdgeMutationProbabilityExtreme":
+    elif args.improvement == "EdgeMutationProbabilityExtreme":
         print(f"Improvement EdgeMutationProbabilityExtreme chosen!")
         edge_probability_callback = EdgePropabilityCallback.extreme_short_edges_different_types
+    elif args.improvement == "AvgDegreeCut":
+        print(f"Improvement AvgDegreeCut chosen!")
+        experiment_class = ImprovedCrossValidationTraining
     else:
         raise ValueError("Unknown Improvement Chosen!")
 
-    experiment = CrossValidationTraining(
+    experiment = experiment_class(
         dataset,
         label_region_loader,
         OUTPUT_DIR,

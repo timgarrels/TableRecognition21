@@ -48,9 +48,12 @@ class ImprovedCrossValidationTraining(CrossValidationTraining):
         degree_avg_cut = self.get_degree_avg_multi_cut(fold["test"])
         file_accuracies = {}
         for key in tqdm(fold["test"], desc=f"Test Set Validation of fold {fold_num}"):
+            # Get ground truth data
             sheet_data = self._dataset.get_specific_sheetdata(key, self._label_region_loader)
             sheet_graph = SpreadSheetGraph(sheet_data)
             ground_truth = sheet_graph.get_table_definitions()
+
+            # Evaluate the prediction
             rater = ImprovedFitnessRater(weights, degree_avg_cut)
             if len(sheet_graph.nodes) <= 10:
                 accuracy = CrossValidationTraining.exhaustive_search_accuracy(ground_truth, sheet_graph, rater)
