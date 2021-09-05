@@ -42,8 +42,14 @@ class ImprovedFitnessRater(FitnessRater):
         d_d = [edge for edge in graph.edge_list if edge.connection_type == ConnectionType.D_D]
         h_h = [edge for edge in graph.edge_list if edge.connection_type == ConnectionType.H_H]
 
-        d_d_degree_avg = len(d_d) / len(ImprovedFitnessRater.data_lrs(graph))
-        h_h_degree_avg = len(h_h) / len(ImprovedFitnessRater.header_lrs(graph))
+        try:
+            d_d_degree_avg = len(d_d) / len(ImprovedFitnessRater.data_lrs(graph))
+        except ZeroDivisionError:
+            d_d_degree_avg = 0
+        try:
+            h_h_degree_avg = len(h_h) / len(ImprovedFitnessRater.header_lrs(graph))
+        except ZeroDivisionError:
+            h_h_degree_avg = 0
         return d_d_degree_avg * h_h_degree_avg
 
     def multi_table_prediction_score(self, graph: SpreadSheetGraph) -> float:
