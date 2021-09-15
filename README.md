@@ -23,9 +23,15 @@ with more than 10 edges.
 
 The quality of a graph with a specific edge list is measured with metrics defined in `FitnessRater`.
 
-### CrossValidationTraining
+### Evaluate
 
-This algorithm will cross validate the machine learning approach to tune the metrics to a specific dataset. As it can
-run really long, there is the option to split the run into separate folds.
+This algorithm will cross validate the machine learning approach to tune the metrics to a specific dataset. Be aware that the computation takes some time and therefore should be run on a server machine.
 
-Complete run: `python3 src/run_cross_validation.py --dataset Test`
+To run all possible combinations of improvments, datasets and noise and to do three differently seeded runs, simply use
+```
+python3 src/run_evaluation.py
+```
+To just run specific tests, use
+```
+python3 src/run_cross_validation.py --dataset DATASET [--seed SEED] [--noise] [--improvement {NoImprovement,EdgeMutationProbability,EdgeMutationProbabilityExtreme,AvgDegreeCut}]
+```
